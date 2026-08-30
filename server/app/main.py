@@ -9,6 +9,7 @@ from app.db.session import Base
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     async with engine.begin() as con:
+        await con.run_sync(Base.metadata.drop_all)
         await con.run_sync(Base.metadata.create_all)
     yield
     await engine.dispose()

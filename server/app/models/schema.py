@@ -1,7 +1,7 @@
 import uuid
 
 from pydantic import BaseModel, ConfigDict
-from typing import Any
+from typing import Any, Optional
 
 # ---General---
 
@@ -19,10 +19,16 @@ class ConvoInfoResponse(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
-class ConvoChatsResponse(ConvoInfoResponse):
+class ChatMessageResponse(BaseModel):
+    id: uuid.UUID
     role: str
     content: str
     sources: list[dict[str, Any]]
+
+    model_config = ConfigDict(from_attributes=True)
+
+class ConvoChatsResponse(ConvoInfoResponse):
+    chats: list[ChatMessageResponse] = []
 
     model_config = ConfigDict(from_attributes=True)
 

@@ -2,6 +2,7 @@ import uuid
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update, delete
+from sqlalchemy.orm import selectinload
 
 from app.models.db import Conversations
 from app.models.schema import InsertConvo
@@ -18,7 +19,13 @@ async def get_all_conversations(db: AsyncSession) -> list[Conversations]:
     return list(result.scalars().all())
 
 async def get_conversation_by_id(db: AsyncSession, id: uuid.UUID) -> Conversations | None:
-    return await db.get(Conversations, id)
+    result = await db.execute(
+        select(Conversations)
+        .where(Conversations.id == id)
+        .options(selectinload(Conversations.chats))
+    )
+
+    return result.scalar_one_or_none()
 
 async def update_conversation(db: AsyncSession, id: uuid.UUID, updated_convo: InsertConvo) -> Conversations | None:
     result = await db.execute(

@@ -17,7 +17,7 @@ class Conversations(Base):
         server_default=text("gen_random_uuid()")
     )
 
-    title: Mapped[str] = mapped_column(
+    title: Mapped[str | None] = mapped_column(
         String,
         default="Untitled",
         nullable=True
@@ -29,19 +29,15 @@ class Conversations(Base):
         nullable=False
     )
 
-    chat_history_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
-        ForeignKey("chat_history.id", ondelete="CASCADE"),
-        nullable=False
+    # One-to-Many Relationship
+    chats: Mapped[list["Chats"]] = relationship(
+        "Chats",
+        back_populates="conversations",
+        cascade="all, delete-orphan"
     )
 
-    chat_history = relationship(
-        "ChatHistory", 
-        back_populates="conversations"
-    )
-
-class ChatHistory(Base):
-    __tablename__ = "chat_history"
+class Chats(Base):
+    __tablename__ = "chats"
     
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
@@ -71,8 +67,13 @@ class ChatHistory(Base):
         nullable=False
     )
 
-    conversations = relationship(
-        "Conversations",
-        back_populates="chat_history",
-        cascade="all, delete-orphan"
+    conversation_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("conversations.id", ondelete="CASCADE"),
+        nullable=False
+    )
+
+    conversations: Mapped["Conversations"] = relationship(
+        "Conversations", 
+        back_populates="chats"
     )
