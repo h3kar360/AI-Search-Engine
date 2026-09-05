@@ -9,9 +9,11 @@ class InputState(TypedDict):
 class OverallState(TypedDict):
     query: str
     queries: list[str]
-    search_results: list[dict]
+    sources: list[str]
+    search_result: str
     requires_search: bool
     response: str
+    vector_store_ids: Annotated[list[str], operator.add]
 
 class SearchingDistributorState(TypedDict):
     query: str

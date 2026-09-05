@@ -24,3 +24,10 @@ class RouteWebSearch(BaseModel):
         default=None,
         description="Direct answer to the user if requires_tool is False."
     )
+
+class GradeDocuments(BaseModel):
+    """Grade documents using a binary score for relevance check."""
+
+    binary_score: str = Field(
+        description="Relevance score: 'yes' if relevant, or 'no' if not relevant"
+    )

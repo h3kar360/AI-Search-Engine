@@ -2,6 +2,7 @@ import os
 
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_postgres import PGVector
+from langchain_core.vectorstores import InMemoryVectorStore
 from sqlalchemy.ext.asyncio import create_async_engine
 
 from dotenv import load_dotenv
@@ -21,16 +22,26 @@ engine = create_async_engine(PGVECTOR_DATABASE_URL)
 
 embeddings = GoogleGenerativeAIEmbeddings(model=embeddings_model)
 
-vector_store = PGVector(
+pgvector_store = PGVector(
     embeddings=embeddings,
     collection_name="web_docs",
     connection=engine
 )
 
-def get_vector_store() -> PGVector:
-    return vector_store
+in_memory_vector_store = InMemoryVectorStore(embeddings)
 
-def get_retriever(k: int = 2):
-    return vector_store.as_retriever(
+def get_pgvector_store() -> PGVector:
+    return pgvector_store
+
+def get_memory_vector_store() -> InMemoryVectorStore:
+    return in_memory_vector_store
+
+def get_pgretriever(k: int = 2):
+    return pgvector_store.as_retriever(
+        search_kwargs={ "k": k }
+    )
+
+def get_in_memory_retriever(k: int = 2):
+    return in_memory_vector_store.as_retriever(
         search_kwargs={ "k": k }
     )
