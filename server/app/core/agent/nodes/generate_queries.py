@@ -26,9 +26,6 @@ async def generate_queries(state: OverallState) -> OverallState:
         [{ "role": "user", "content": prompt }]
     )
 
-    response_message = AIMessage(content=f"Created {n} amount of queries to search in the internet.")
-
     return {
-        "messages": [response_message],
         "queries": queries
     }
