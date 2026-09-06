@@ -4,8 +4,9 @@ from typing import Optional
 class Queries(BaseModel):
     """Generate queries by creating a list of queries"""
 
-    queries: list[str] = Field(
-        description="The list of queries"
+    search_queries: list[str] = Field(
+        default_factory=list,
+        description="To write multiple relevant queries that do not overlap, but will generate meaningful queries that can make the most out of the search results in the internet. Only if requires_tool is True"
     )
 
 class RouteWebSearch(BaseModel):

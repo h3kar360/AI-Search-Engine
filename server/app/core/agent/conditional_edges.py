@@ -23,10 +23,11 @@ def continue_to_search_tool(state: OverallState) -> list[Send] | str:
     return sends
 
 
-def check_docs_relevance(state: OverallState) -> Literal["generate_answer", "rewrite_queries"]:
+def check_docs_relevance(state: OverallState) -> Literal["generate_answer", "rewrite_queries", "generate_no_answer"]:
     """Determine whether the retrieved documents are relevant to the user's query"""
     query = state["query"]
     context = state["search_result"]
+    queries_retries = state["queries_retries"]
 
     grade_llm = get_grading_llm()
     prompt = GRADE_PROMPT.format(question=query, context=context)
@@ -35,8 +36,10 @@ def check_docs_relevance(state: OverallState) -> Literal["generate_answer", "rew
         { "role": "user", "content": prompt },
     ])
 
-    if response.binary_score == "yes":
+    if response.binary_score == "yes" and queries_retries <= 2:
         return "generate_answer"
-
-    return "rewrite_queries"
+    elif response.binary_score == "no" and queries_retries > 2:
+        return "generate_no_answer"
+    else:
+        return "rewrite_queries"
     

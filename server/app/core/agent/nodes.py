@@ -1,15 +1,15 @@
-from typing import Literal
-
 from app.core.agent.state import InputState, OverallState, OutputState
-from app.core.llm import get_web_search_llm
+from app.core.llm import get_web_search_llm, get_llm, get_rewrite_llm
 from app.models.llm_schema import RouteWebSearch
 from app.tools.web_search_tool import web_search_tool
 from app.core.agent.state import SearchingDistributorState
-from app.core.agent.prompts import ROUTER_PROMPT
+from app.core.agent.prompts import ROUTER_PROMPT, GENERATE_PROMPT, REWRITE_PROMPT
 from app.db.vector_store import get_memory_vector_store, get_in_memory_retriever
 
 vector_store = get_memory_vector_store()
 retriever = get_in_memory_retriever()
+
+n = 3
 
 async def generate_queries_or_respond(state: InputState) -> OverallState:
     """Call the model to generate a response based on the current state. Given
@@ -19,7 +19,7 @@ async def generate_queries_or_respond(state: InputState) -> OverallState:
     deciding_llm = get_web_search_llm()
 
     decision: RouteWebSearch = await deciding_llm.ainvoke([
-        { "role": "system", "content": ROUTER_PROMPT.format(n=3) },
+        { "role": "system", "content": ROUTER_PROMPT.format(n=n) },
         { "role": "user", "content": state["query"] }
     ])
 
@@ -63,6 +63,43 @@ async def search_for_answer(state: OverallState) -> OverallState:
     return {
         "sources": docs_sources,
         "search_result": docs_as_text
+    }
+
+async def generate_answer(state: OverallState) -> OutputState:
+    llm = get_llm()
+    prompt = GENERATE_PROMPT.format(question=state["query"], context=state["search_result"])
+
+    response = await llm.ainvoke([
+        { "role": "user", "content": prompt }
+    ])
+
+    return {
+        "response": response
+    }
+
+async def rewrite_queries(state: OverallState) -> OverallState:
+    queries_retries = state["queries_retries"]
+    queries = state["queries"]
+    query = state["query"]
+
+    rewrite_llm = get_rewrite_llm()
+
+    queries_as_str = "\n\n".join(query for query in queries)
+
+    prompt = REWRITE_PROMPT.format(question=query, queries=queries_as_str, n=n)
+
+    new_queries = await rewrite_llm.ainvoke([
+        { "role": "user", "content": prompt }
+    ])
+
+    return {
+        "queries": new_queries,
+        "queries_retries": queries_retries + 1
+    }
+
+async def generate_no_answer(state: OverallState) -> OutputState:
+    return {
+        "response": f"There are no search results on {state['query']}"
     }
 
 def response(state: OverallState) -> OutputState:

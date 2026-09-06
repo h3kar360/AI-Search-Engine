@@ -14,6 +14,7 @@ class OverallState(TypedDict):
     requires_search: bool
     response: str
     vector_store_ids: Annotated[list[str], operator.add]
+    queries_retries: int = 0
 
 class SearchingDistributorState(TypedDict):
     query: str

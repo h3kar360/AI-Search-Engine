@@ -1,5 +1,5 @@
 from langchain.chat_models import init_chat_model, BaseChatModel
-from app.models.llm_schema import RouteWebSearch, GradeDocuments
+from app.models.llm_schema import RouteWebSearch, GradeDocuments, Queries
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -14,3 +14,7 @@ def get_web_search_llm(model_name: str = "google_genai:gemini-3.5-flash-lite", t
 def get_grading_llm(model_name: str = "google_genai:gemini-3.5-flash-lite", temperature: float = 0.0) -> BaseChatModel:
     grading_llm = init_chat_model(model=model_name, temperature=temperature)
     return grading_llm.with_structured_output(GradeDocuments)
+
+def get_rewrite_llm(model_name: str = "google_genai:gemini-3.5-flash-lite", temperature: float = 0.3) -> BaseChatModel:
+    rewrite_llm = init_chat_model(model=model_name, temperature=temperature)
+    return rewrite_llm.with_structured_output(Queries)
