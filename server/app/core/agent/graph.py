@@ -29,3 +29,6 @@ workflow.add_edge("generate_no_answer", END)
 workflow.add_edge("generate_answer", END)
 workflow.add_edge("response", END)
 
+graph = workflow.compile()
+
+
