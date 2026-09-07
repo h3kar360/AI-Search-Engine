@@ -7,7 +7,7 @@ from app.core.agent.prompts import ROUTER_PROMPT, GENERATE_PROMPT, REWRITE_PROMP
 from app.db.vector_store import get_memory_vector_store, get_in_memory_retriever
 
 vector_store = get_memory_vector_store()
-retriever = get_in_memory_retriever()
+retriever = vector_store.as_retriever(search_kwargs={ "k": 3 })
 
 n = 3
 
@@ -27,42 +27,56 @@ async def generate_queries_or_respond(state: InputState) -> OverallState:
         "query": state["query"],
         "queries": decision.search_queries,
         "requires_search": decision.requires_web_search,
-        "response": decision.response
+        "response": decision.response,
+        "queries_retries": 0
     }
 
-async def call_web_search(state: SearchingDistributorState) -> SearchingDistributorState:
+async def call_web_search(state: SearchingDistributorState) -> OverallState:
     retrieved_searched_docs = await web_search_tool.ainvoke({
         "query": state["query"],
-        "search_depth": state["search_depth"]
+        "max_results": state["max_results"]
     })
 
     return {
-        "retrieved_docs": retrieved_searched_docs
+        "retrieved_docs": retrieved_searched_docs or []
     }
 
-async def embed_and_store_searches(state: SearchingDistributorState) -> OverallState:    
-    ids = await vector_store.aadd_documents(state["retrieved_docs"])
+async def embed_and_store_searches(state: OverallState) -> OverallState:    
+    docs_to_store = state["retrieved_docs"]
+
+    if not docs_to_store:
+        return {
+            "vector_store_ids": [],
+            "retrieved_docs": None
+        }
+
+    ids = await vector_store.aadd_documents(docs_to_store)
 
     return {
-        "vector_store_ids": ids
+        "vector_store_ids": ids,
+        "retrieved_docs": None
     }
 
 async def search_for_answer(state: OverallState) -> OverallState:
-    retrieved_docs = await retriever.ainvoke(state["query"])
-    await vector_store.adelete(ids=state["vector_store_ids"])
+    try:
+        retrieved_docs = await retriever.ainvoke(state["query"])
+    finally:
+        if state.get("vector_store_ids"):
+            await vector_store.adelete(ids=state["vector_store_ids"])
 
     docs_page_contents = []
     docs_sources = []
 
     for doc in retrieved_docs:
         docs_page_contents.append(doc.page_content)
-        docs_sources.append(doc.metadata["sources"])
+        docs_sources.append(doc.metadata.get("source", "Unknown"))
 
     docs_as_text = "\n\n".join(docs_page_contents)
 
     return {
         "sources": docs_sources,
-        "search_result": docs_as_text
+        "search_result": docs_as_text,
+        "vector_store_ids": None
     }
 
 async def generate_answer(state: OverallState) -> OutputState:
@@ -74,7 +88,7 @@ async def generate_answer(state: OverallState) -> OutputState:
     ])
 
     return {
-        "response": response
+        "response": response.content
     }
 
 async def rewrite_queries(state: OverallState) -> OverallState:
@@ -84,7 +98,7 @@ async def rewrite_queries(state: OverallState) -> OverallState:
 
     rewrite_llm = get_rewrite_llm()
 
-    queries_as_str = "\n\n".join(query for query in queries)
+    queries_as_str = "\n\n".join(q for q in queries)
 
     prompt = REWRITE_PROMPT.format(question=query, queries=queries_as_str, n=n)
 
@@ -93,7 +107,7 @@ async def rewrite_queries(state: OverallState) -> OverallState:
     ])
 
     return {
-        "queries": new_queries,
+        "queries": new_queries.search_queries,
         "queries_retries": queries_retries + 1
     }
 

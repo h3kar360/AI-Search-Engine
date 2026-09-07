@@ -35,13 +35,3 @@ def get_pgvector_store() -> PGVector:
 
 def get_memory_vector_store() -> InMemoryVectorStore:
     return in_memory_vector_store
-
-def get_pgretriever(k: int = 2):
-    return pgvector_store.as_retriever(
-        search_kwargs={ "k": k }
-    )
-
-def get_in_memory_retriever(k: int = 2):
-    return in_memory_vector_store.as_retriever(
-        search_kwargs={ "k": k }
-    )
