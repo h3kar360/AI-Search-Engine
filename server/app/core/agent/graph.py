@@ -1,3 +1,5 @@
+import asyncio
+
 from langgraph.graph import StateGraph, START, END
 
 from app.core.agent.nodes import generate_queries_or_respond, response, call_web_search, embed_and_store_searches, search_for_answer, rewrite_queries, generate_no_answer, generate_answer
@@ -36,3 +38,20 @@ workflow.add_edge("response", END)
 
 graph = workflow.compile()
 
+print("it is running here")
+
+async def stream_agent():
+    print("--- STARTING STREAM TEST ---\n")
+    async for chunk in graph.astream(
+        {"query": "what is lake ontario renamed to in the USA right now?"},
+        stream_mode=["updates", "custom"],
+        version="v2"
+    ):
+        if chunk["type"] == "updates":
+            for node_name, state in chunk["data"].items():
+                print(f"Node {node_name} updated: {state}")
+        elif chunk["type"] == "custom":
+            print(f"Status: {chunk['data']['status']}")
+
+if __name__ == "__main__":
+    asyncio.run(stream_agent())

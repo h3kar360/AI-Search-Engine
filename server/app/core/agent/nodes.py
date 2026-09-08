@@ -4,7 +4,7 @@ from app.models.llm_schema import RouteWebSearch
 from app.tools.web_search_tool import web_search_tool
 from app.core.agent.state import SearchingDistributorState
 from app.core.agent.prompts import ROUTER_PROMPT, GENERATE_PROMPT, REWRITE_PROMPT
-from app.db.vector_store import get_memory_vector_store, get_in_memory_retriever
+from app.db.vector_store import get_memory_vector_store
 
 vector_store = get_memory_vector_store()
 retriever = vector_store.as_retriever(search_kwargs={ "k": 3 })
@@ -32,6 +32,7 @@ async def generate_queries_or_respond(state: InputState) -> OverallState:
     }
 
 async def call_web_search(state: SearchingDistributorState) -> OverallState:
+    """Call the web search tool to get most recent and relevant information on recent matters"""
     retrieved_searched_docs = await web_search_tool.ainvoke({
         "query": state["query"],
         "max_results": state["max_results"]
@@ -41,7 +42,8 @@ async def call_web_search(state: SearchingDistributorState) -> OverallState:
         "retrieved_docs": retrieved_searched_docs or []
     }
 
-async def embed_and_store_searches(state: OverallState) -> OverallState:    
+async def embed_and_store_searches(state: OverallState) -> OverallState:   
+    """Embed all the retrieved documents and store it to an in memory vector store to be used later""" 
     docs_to_store = state["retrieved_docs"]
 
     if not docs_to_store:
@@ -58,6 +60,7 @@ async def embed_and_store_searches(state: OverallState) -> OverallState:
     }
 
 async def search_for_answer(state: OverallState) -> OverallState:
+    """Search through the vector store to get the most relevant context to the user's query"""
     try:
         retrieved_docs = await retriever.ainvoke(state["query"])
     finally:
@@ -80,6 +83,7 @@ async def search_for_answer(state: OverallState) -> OverallState:
     }
 
 async def generate_answer(state: OverallState) -> OutputState:
+    """Generate an answer based on all the context given and the user's query"""
     llm = get_llm()
     prompt = GENERATE_PROMPT.format(question=state["query"], context=state["search_result"])
 
@@ -92,6 +96,7 @@ async def generate_answer(state: OverallState) -> OutputState:
     }
 
 async def rewrite_queries(state: OverallState) -> OverallState:
+    """Rewrite the queries to be better quality so it should get the most relevant and high quality information in the web"""
     queries_retries = state["queries_retries"]
     queries = state["queries"]
     query = state["query"]
@@ -112,11 +117,13 @@ async def rewrite_queries(state: OverallState) -> OverallState:
     }
 
 async def generate_no_answer(state: OverallState) -> OutputState:
+    """Generate no answer because there are no relevant context in the web"""
     return {
         "response": f"There are no search results on {state['query']}"
     }
 
 def response(state: OverallState) -> OutputState:
+    """Parse the state from overall state to the output state"""
     return {
         "response": state["response"]
     }

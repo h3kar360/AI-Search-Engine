@@ -7,6 +7,7 @@ from app.core.agent.prompts import GRADE_PROMPT
 from app.core.llm import get_grading_llm
 
 def continue_to_search(state: OverallState) -> list[Send] | str:
+    """Sends parallel nodes to search for each queries generated"""
     requires_search = state.get("requires_search", False)
     queries = state.get("queries", [])
 

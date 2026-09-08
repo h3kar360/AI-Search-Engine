@@ -9,6 +9,7 @@ load_dotenv()
 
 @tool
 async def web_search_tool(query: str, max_results: int) -> list[Document]:
+    """Searches the web for most recent and relevant information"""
     TAVILY_API_KEY = os.getenv("TAVILY_API_KEY")
     tavily_client = AsyncTavilyClient(api_key=TAVILY_API_KEY)
 
