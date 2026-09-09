@@ -1,6 +1,7 @@
 from typing import Literal
 
 from langgraph.types import Send
+from langgraph.config import get_stream_writer
 
 from app.core.agent.state import OverallState, SearchingDistributorState
 from app.core.agent.prompts import GRADE_PROMPT
@@ -10,6 +11,12 @@ def continue_to_search(state: OverallState) -> list[Send] | str:
     """Sends parallel nodes to search for each queries generated"""
     requires_search = state.get("requires_search", False)
     queries = state.get("queries", [])
+
+    writer = get_stream_writer()
+        
+    writer({
+        "log": "Allocating parallel agents to search the web"
+    })
 
     if not requires_search:
         return "response"
@@ -33,6 +40,12 @@ async def check_docs_relevance(state: OverallState) -> Literal["generate_answer"
     query = state["query"]
     context = state["search_result"]
     queries_retries = state["queries_retries"]
+
+    writer = get_stream_writer()
+        
+    writer({
+        "log": "Determining quality of search results"
+    })
 
     grade_llm = get_grading_llm()
     prompt = GRADE_PROMPT.format(question=query, context=context)

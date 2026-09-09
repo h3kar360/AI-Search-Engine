@@ -1,4 +1,4 @@
-import asyncio
+import json
 
 from langgraph.graph import StateGraph, START, END
 
@@ -38,20 +38,34 @@ workflow.add_edge("response", END)
 
 graph = workflow.compile()
 
-print("it is running here")
+async def stream_agent(input: dict):
+    query = input.get("user_message", "")
 
-async def stream_agent():
-    print("--- STARTING STREAM TEST ---\n")
     async for chunk in graph.astream(
-        {"query": "what is lake ontario renamed to in the USA right now?"},
-        stream_mode=["updates", "custom"],
+        { "query": query },
+        stream_mode=["custom", "messages"],
         version="v2"
     ):
-        if chunk["type"] == "updates":
-            for node_name, state in chunk["data"].items():
-                print(f"Node {node_name} updated: {state}")
-        elif chunk["type"] == "custom":
-            print(f"Status: {chunk['data']['status']}")
+        if chunk["type"] == "custom":
+            if chunk["data"].get("sources"):
+                payload = {
+                            "type": "custom",
+                            "log": chunk["data"]["log"],
+                            "sources": chunk["data"]["sources"]
+                        }
+            else:
+                payload = {
+                            "type": "custom",
+                            "log": chunk["data"]["log"],
+                        }
 
-if __name__ == "__main__":
-    asyncio.run(stream_agent())
+            yield f"data: {json.dumps(payload)}\n\n"
+        elif chunk["type"] == "messages":
+            msg, metadata = chunk["data"]
+            payload = {
+                "type": "messages",
+                "message": msg.content,
+                "node": metadata.get("langgraph_node", "")
+            }
+
+            yield f"data: {json.dumps(payload)}\n\n"

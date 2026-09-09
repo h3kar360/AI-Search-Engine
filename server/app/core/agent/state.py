@@ -16,7 +16,7 @@ class InputState(TypedDict):
 class OverallState(TypedDict, total=False):
     query: str
     queries: list[str]
-    sources: list[str]
+    sources: Annotated[list[str], reset_add_list_reducers]
     search_result: str
     requires_search: bool
     response: str
@@ -30,3 +30,4 @@ class SearchingDistributorState(TypedDict):
 
 class OutputState(TypedDict):
     response: str
+    sources: list[str] | None

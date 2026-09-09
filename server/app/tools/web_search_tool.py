@@ -1,7 +1,9 @@
 import os
 
 from langchain.tools import tool
+from langgraph.config import get_stream_writer
 from langchain_core.documents import Document
+
 from tavily import AsyncTavilyClient
 from dotenv import load_dotenv
 
@@ -10,6 +12,12 @@ load_dotenv()
 @tool
 async def web_search_tool(query: str, max_results: int) -> list[Document]:
     """Searches the web for most recent and relevant information"""
+    writer = get_stream_writer()
+
+    writer({
+        "log": f"Searching for {query}"
+    })
+
     TAVILY_API_KEY = os.getenv("TAVILY_API_KEY")
     tavily_client = AsyncTavilyClient(api_key=TAVILY_API_KEY)
 

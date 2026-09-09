@@ -1,11 +1,14 @@
 import uuid
+import json
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Form
+from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_db
 from app.services import conversations
 from app.models.schema import InsertConvo, ConvoInfoResponse, ConvoChatsResponse, RaiseMessage
+from app.core.agent.graph import stream_agent
 
 convo_router = APIRouter()
 
@@ -53,4 +56,23 @@ async def delete_convo(id: uuid.UUID, db: AsyncSession = Depends(get_db)):
 
     return RaiseMessage(
         message=f"Successfully deleted conversation id: {id}"
+    )
+
+@convo_router.post("/chat")
+async def chat_with_llm(user_message: str = Form(...)):
+    async def event_generator():
+        try:
+            async for chunk in stream_agent({"user_message": user_message}):
+                yield chunk
+        except Exception as e:
+            yield f"data: {json.dumps({'error': str(e)})}\n\n"
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            # "X-Accel-Buffering": "no" 
+        }
     )
