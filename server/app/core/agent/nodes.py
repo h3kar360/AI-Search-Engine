@@ -8,6 +8,8 @@ from app.db.vector_store import get_memory_vector_store
 
 from langgraph.config import get_stream_writer
 
+from datetime import datetime
+
 vector_store = get_memory_vector_store()
 retriever = vector_store.as_retriever(search_kwargs={ "k": 3 })
 
@@ -24,10 +26,13 @@ async def generate_queries_or_respond(state: InputState) -> OverallState:
         "log": "Determining whether to generate queries to search or respond"
     })
 
+    curr_date = datetime.now()
+    format_curr_date = curr_date.strftime("%B %d, %Y")
+
     deciding_llm = get_web_search_llm()
 
     decision: RouteWebSearch = await deciding_llm.ainvoke([
-        { "role": "system", "content": ROUTER_PROMPT.format(n=n) },
+        { "role": "system", "content": ROUTER_PROMPT.format(n=n, date=format_curr_date) },
         { "role": "user", "content": state["query"] }
     ])
 

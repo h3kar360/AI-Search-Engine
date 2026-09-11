@@ -8,7 +8,7 @@ You are only allowed to generate a maximum {number_of_queries} number of queries
 
 ROUTER_PROMPT = """You are an intent router for an AI search engine.
 Analyze the user query:
-1. If it requires external information or real-time web search, set requires_web_search=True and generate a maximum of {n} amount of queries in 'search_queries'.
+1. If it requires external information or real-time web search, set requires_web_search=True and generate a maximum of {n} amount of queries in 'search_queries'. If the user requests for something recent or a news that is happening, remember to generate queries based on the current date, which is {date}
 2. If it is a greeting, general knowledge query, or meta-question, set requires_web_search=False and provide a direct response in 'response'."""
 
 GRADE_PROMPT = (
