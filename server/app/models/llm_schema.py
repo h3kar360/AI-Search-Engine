@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import Optional
+from typing import Optional, Literal
 
 class Queries(BaseModel):
     """Generate queries by creating a list of queries"""
@@ -31,4 +31,26 @@ class GradeDocuments(BaseModel):
 
     binary_score: str = Field(
         description="Relevance score: 'yes' if relevant, or 'no' if not relevant"
+    )
+
+class Summarizer(BaseModel):
+    """Summarize the recent message history"""
+
+    content: str = Field(
+        description="Write the summary of the conversation history. Seperate each point with '||'."
+    )
+
+class MemoryOperation(BaseModel):
+    """Decide what operations to do in its long term memory"""
+
+    operation: Literal["ADD", "UPDATE", "DELETE", "NOOP"] = Field(
+        description="Decide what operation to use, choices: 'ADD' to insert a new piece of memory to storage, 'UPDATE' to update an existing memory in storage, 'DELETE' to delete an existing memory in storage, 'NOOP' for no operation."
+    )
+
+    key: str = Field(
+        description="The key of which we want to 'UPDATE' or 'DELETE'. It can be extracted from the prompt."
+    )
+
+    value: Optional[str] = Field(
+        description="The content that we want to add ('ADD') or update ('UPDATE') in the memory. Leave empty for 'DELETE'"
     )

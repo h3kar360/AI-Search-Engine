@@ -1,14 +1,15 @@
 import uuid
 import json
 
-from fastapi import APIRouter, Depends, HTTPException, status, Form
+from fastapi import APIRouter, Depends, HTTPException, status, Form, Request, BackgroundTasks
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_db
 from app.services import conversations
 from app.models.schema import InsertConvo, ConvoInfoResponse, ConvoChatsResponse, RaiseMessage
-from app.core.agent.graph import stream_agent
+from app.core.stream_agent import stream_agent
+from app.core.agent.memory import process_memory
 
 convo_router = APIRouter()
 
@@ -59,13 +60,45 @@ async def delete_convo(id: uuid.UUID, db: AsyncSession = Depends(get_db)):
     )
 
 @convo_router.post("/chat")
-async def chat_with_llm(user_message: str = Form(...)):
+async def chat_with_llm(request: Request, background_tasks: BackgroundTasks, user_message: str = Form(...)):
+    graph = request.app.state.graph
+    store = request.app.state.store
+    convo_id = "chat_123"
+    user_id = "user_123"
+
+    config = {
+            "configurable": {
+                "thread_id": convo_id
+            }
+        }
+
+    initial_state = await graph.aget_state(config)
+    initial_messages = initial_state.values.get("messages", [])
+    initial_index = len(initial_messages)
+
     async def event_generator():
         try:
-            async for chunk in stream_agent({"user_message": user_message}):
+            async for chunk in stream_agent(
+                graph=graph, 
+                input={"user_message": user_message}, 
+                user_id=user_id,
+                config=config
+            ):
                 yield chunk
         except Exception as e:
             yield f"data: {json.dumps({'error': str(e)})}\n\n"
+        finally:
+            final_state = await graph.aget_state(config)
+
+            all_messages = final_state.values.get("messages", [])
+            recent_messages = all_messages[initial_index:]
+
+            background_tasks.add_task(
+                process_memory,
+                store=store,
+                user_id=user_id,
+                recent_messages=recent_messages
+            )
 
     return StreamingResponse(
         event_generator(),

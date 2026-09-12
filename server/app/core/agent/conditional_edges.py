@@ -13,16 +13,16 @@ def continue_to_search(state: OverallState) -> list[Send] | str:
     queries = state.get("queries", [])
 
     writer = get_stream_writer()
-        
-    writer({
-        "log": "Allocating parallel agents to search the web"
-    })
 
     if not requires_search:
         return "response"
     
     if requires_search and not queries:
         return "generate_no_answer"
+
+    writer({
+        "log": "Allocating parallel agents to search the web"
+    })
 
     sends = []
     for query in state.get("queries", []):
