@@ -2,12 +2,12 @@ import uuid
 
 from langgraph.store.postgres.aio import AsyncPostgresStore
 
-from app.core.llm import get_operator_llm, get_summarizer_llm
+from app.core.llm import get_operator_llm, get_long_summarizer_llm
 from app.core.agent.prompts import MEMORY_EXTRACTION_PROMPT, MEMORY_OPERATION_PROMPT
 
 async def process_memory(store: AsyncPostgresStore, user_id: str, recent_messages: list[str]):
     operator_llm = get_operator_llm()
-    summarizer_llm = get_summarizer_llm()
+    summarizer_llm = get_long_summarizer_llm()
 
     namespace = ("memories", user_id)
 

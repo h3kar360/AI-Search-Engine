@@ -23,6 +23,10 @@ def get_operator_llm(model_name: str = "google_genai:gemini-3.5-flash-lite", tem
     operator_llm = init_chat_model(model=model_name, temperature=temperature)
     return operator_llm.with_structured_output(MemoryOperation)
 
-def get_summarizer_llm(model_name: str = "google_genai:gemini-3.5-flash-lite", temperature: float = 0.5) -> BaseChatModel:
+def get_long_summarizer_llm(model_name: str = "google_genai:gemini-3.5-flash-lite", temperature: float = 0.5) -> BaseChatModel:
     summarizer_llm = init_chat_model(model=model_name, temperature=temperature)
     return summarizer_llm.with_structured_output(Summarizer)
+
+def get_short_summarizer_llm(model_name: str = "google_genai:gemini-3.5-flash-lite", temperature: float = 0.5) -> BaseChatModel:
+    summarizer_llm = init_chat_model(model=model_name, temperature=temperature)
+    return summarizer_llm

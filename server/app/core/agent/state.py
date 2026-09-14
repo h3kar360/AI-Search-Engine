@@ -1,7 +1,9 @@
 from typing import Annotated, TypedDict, TypeVar
 
 from langchain_core.documents import Document
+from langchain.messages import AnyMessage
 from langgraph.graph import MessagesState
+from langmem.short_term import RunningSummary
 
 T = TypeVar("T")
 
@@ -12,7 +14,9 @@ def reset_add_list_reducers(existing: list[T], incoming: list[T] | None) -> list
     return (existing or []) + incoming
 
 class InputState(MessagesState):
-    query: str
+    query: str    
+    summarized_messages: list[AnyMessage]
+    context: dict[str, RunningSummary]
 
 class OverallState(MessagesState, total=False):
     query: str
@@ -23,6 +27,7 @@ class OverallState(MessagesState, total=False):
     response: str
     retrieved_docs: Annotated[list[Document], reset_add_list_reducers]
     queries_retries: int
+    context: dict[str, RunningSummary]
 
 class SearchingDistributorState(TypedDict):
     query: str

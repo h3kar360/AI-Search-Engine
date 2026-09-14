@@ -35,5 +35,5 @@ async def get_store():
             "dims": embeddings_dimensions
         }
     ) as store:
-        await store.setup()
+        # await store.setup()
         yield store

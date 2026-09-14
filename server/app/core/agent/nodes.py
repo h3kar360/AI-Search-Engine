@@ -1,7 +1,7 @@
 import uuid
 
 from app.core.agent.state import InputState, OverallState, OutputState
-from app.core.llm import get_web_search_llm, get_llm, get_rewrite_llm
+from app.core.llm import get_web_search_llm, get_llm, get_rewrite_llm, get_short_summarizer_llm
 from app.models.llm_schema import RouteWebSearch
 from app.tools.web_search_tool import web_search_tool
 from app.core.agent.state import SearchingDistributorState
@@ -12,20 +12,34 @@ from app.core.agent.context import Context
 from langgraph.config import get_stream_writer
 from langchain.messages import AIMessage, ToolMessage
 from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_core.messages.utils import count_tokens_approximately
 from langgraph.runtime import Runtime
+from langmem.short_term import SummarizationNode
 
 from datetime import datetime
 
 n = 3
 
+summarization_node = SummarizationNode(
+    token_counter=count_tokens_approximately,
+    model=get_short_summarizer_llm(),
+    max_tokens=256,
+    max_tokens_before_summary=250,
+    max_summary_tokens=128,
+)
+
 async def generate_queries_or_respond(state: InputState, runtime: Runtime[Context]) -> OverallState:
     """Call the model to generate a response based on the current state. Given
     the question, it will decide to generate queries to search online, or simply respond to the user.
     """
+    print("\ntotal messages: " + str(len(state["messages"])))
+
     query = state["query"]
+    summarized_messages = state["summarized_messages"]
+
+    print("\n====summarized=====\n" + "\n".join(str(msg) for msg in summarized_messages))
 
     # Obtaining all relevant chat history / agent's memory from short and long term memory
-    chat_history = state.get("messages", [])
     user_id = runtime.context.user_id
     namespace = ("memories", user_id)
     memories = await runtime.store.asearch(namespace, query=query)
@@ -41,9 +55,15 @@ async def generate_queries_or_respond(state: InputState, runtime: Runtime[Contex
     format_curr_date = curr_date.strftime("%B %d, %Y")
 
     deciding_llm = get_web_search_llm()
+    router_prompt = ROUTER_PROMPT.format(
+        chat_summary=summarized_messages,
+        user_bound_memories=user_bound_memories, 
+        n=n, 
+        date=format_curr_date
+    )
 
-    decision: RouteWebSearch = await deciding_llm.ainvoke([
-        { "role": "system", "content": ROUTER_PROMPT.format(chat_history=chat_history, user_bound_memories=user_bound_memories, n=n, date=format_curr_date) },
+    decision = await deciding_llm.ainvoke([
+        { "role": "system", "content": router_prompt },
         { "role": "user", "content": query }
     ])
 
