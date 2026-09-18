@@ -7,6 +7,8 @@ from app.core.agent.state import OverallState, SearchingDistributorState
 from app.core.agent.prompts import GRADE_PROMPT
 from app.core.llm import get_grading_llm
 
+from datetime import datetime
+
 def continue_to_search(state: OverallState) -> list[Send] | str:
     """Sends parallel nodes to search for each queries generated"""
     requires_search = state.get("requires_search", False)
@@ -47,8 +49,11 @@ async def check_docs_relevance(state: OverallState) -> Literal["generate_answer"
         "log": "Determining quality of search results"
     })
 
+    curr_date = datetime.now()
+    format_curr_date = curr_date.strftime("%B %d, %Y")
+
     grade_llm = get_grading_llm()
-    prompt = GRADE_PROMPT.format(question=query, context=context)
+    prompt = GRADE_PROMPT.format(question=query, context=context, date=format_curr_date)
 
     response = await grade_llm.ainvoke([
         { "role": "user", "content": prompt },

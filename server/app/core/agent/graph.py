@@ -15,7 +15,7 @@ from app.core.agent.conditional_edges import continue_to_search, check_docs_rele
 from app.core.agent.state import InputState, OverallState, OutputState
 from app.core.agent.context import Context
 
-async def create_graph(checkpointer: AsyncPostgresSaver, store: AsyncPostgresStore):
+async def create_graph(checkpointer: AsyncPostgresSaver | None, store: AsyncPostgresStore | None):
     workflow = StateGraph(OverallState, input_schema=InputState, output_schema=OutputState, context_schema=Context)
 
     workflow.add_node("summarize", summarization_node)
@@ -46,4 +46,6 @@ async def create_graph(checkpointer: AsyncPostgresSaver, store: AsyncPostgresSto
     workflow.add_edge("generate_answer", END)
     workflow.add_edge("response", END)
 
-    return workflow.compile(checkpointer=checkpointer, store=store)
+    if checkpointer and store:
+        return workflow.compile(checkpointer=checkpointer, store=store)
+    return workflow.compile()

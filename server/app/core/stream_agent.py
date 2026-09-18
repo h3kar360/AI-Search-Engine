@@ -5,7 +5,7 @@ from app.core.agent.context import Context
 from langchain.messages import HumanMessage
 from langgraph.graph import StateGraph
 
-async def stream_agent(graph: StateGraph, input: dict, user_id: str, config: dict):
+async def stream_agent(graph: StateGraph, input: dict, context: Context | None, config: dict | None):
     query = input.get("user_message", "")
     
 
@@ -17,20 +17,13 @@ async def stream_agent(graph: StateGraph, input: dict, user_id: str, config: dic
         stream_mode=["custom", "messages"],
         config=config, 
         version="v3",
-        context=Context(user_id=user_id)
+        context=context
     ):
         if chunk_mode == "custom":
-            if chunk_data.get("sources"):
-                payload = {
-                            "type": "custom",
-                            "log": chunk_data["log"],
-                            "sources": chunk_data["sources"]
-                        }
-            else:
-                payload = {
-                            "type": "custom",
-                            "log": chunk_data["log"],
-                        }
+            payload = {
+                        "type": "custom",
+                        "log": chunk_data["log"],
+                    }
 
             yield f"data: {json.dumps(payload)}\n\n"
         elif chunk_mode == "messages":

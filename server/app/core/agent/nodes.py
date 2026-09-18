@@ -18,6 +18,9 @@ from langmem.short_term import SummarizationNode
 
 from datetime import datetime
 
+curr_date = datetime.now()
+format_curr_date = curr_date.strftime("%B %d, %Y")
+
 n = 3
 
 summarization_node = SummarizationNode(
@@ -32,27 +35,24 @@ async def generate_queries_or_respond(state: InputState, runtime: Runtime[Contex
     """Call the model to generate a response based on the current state. Given
     the question, it will decide to generate queries to search online, or simply respond to the user.
     """
-    print("\ntotal messages: " + str(len(state["messages"])))
-
     query = state["query"]
-    summarized_messages = state["summarized_messages"]
-
-    print("\n====summarized=====\n" + "\n".join(str(msg) for msg in summarized_messages))
+    summarized_messages = state.get("summarized_messages") or state.get("messages", [])
 
     # Obtaining all relevant chat history / agent's memory from short and long term memory
-    user_id = runtime.context.user_id
-    namespace = ("memories", user_id)
-    memories = await runtime.store.asearch(namespace, query=query)
-    user_bound_memories = "\n".join([data.value["data"] for data in memories])
+    user_id = getattr(runtime.context, "user_id", None)
+    user_bound_memories = ""
+
+    # check whether store exists (if the user is a guest)
+    if user_id and runtime.store:
+        namespace = ("memories", user_id)
+        memories = await runtime.store.asearch(namespace, query=query)
+        user_bound_memories = "\n".join([data.value["data"] for data in memories])
 
     writer = get_stream_writer()
 
     writer({
         "log": "Determining whether to generate queries to search or respond"
     })
-
-    curr_date = datetime.now()
-    format_curr_date = curr_date.strftime("%B %d, %Y")
 
     deciding_llm = get_web_search_llm()
     router_prompt = ROUTER_PROMPT.format(
@@ -67,28 +67,21 @@ async def generate_queries_or_respond(state: InputState, runtime: Runtime[Contex
         { "role": "user", "content": query }
     ])
 
-    message = ""
-
     if decision.requires_web_search:
         writer({
             "log": "Generating relevant queries to search"
         })
-
-        message = AIMessage("\n\n".join(query for query in decision.search_queries))
     else:
         writer({
             "log": "Generating respond and proceeding to response node"
         })
-
-        message = AIMessage(decision.response)
 
     return {
         "query": state["query"],
         "queries": decision.search_queries,
         "requires_search": decision.requires_web_search,
         "response": decision.response,
-        "queries_retries": 0,
-        "messages": [message]
+        "queries_retries": 0
     }
 
 async def call_web_search(state: SearchingDistributorState) -> OverallState:
@@ -170,23 +163,18 @@ async def embed_store_search(state: OverallState) -> OverallState:
 
     docs_page_contents = []
     docs_sources = []
-    message = ""
 
     # format the documents to string to be placed for messages
     for doc in retrieved_docs:
         docs_page_contents.append(doc.page_content)
         docs_sources.append(doc.metadata.get("source", "Unknown"))
-        message += f"content: {doc.page_content}\n\nsource: {doc.metadata["source"]}\n\n"
 
     docs_as_text = "\n\n".join(docs_page_contents)
-    
-    message = AIMessage("Embedding all retrieved documents and storing it to an in memory vector store")
 
     return {
         "retrieved_docs": None,
         "sources": docs_sources,
-        "search_result": docs_as_text,
-        "messages": [message]
+        "search_result": docs_as_text
     }
 
 # async def search_for_answer(state: OverallState) -> OverallState:
@@ -236,14 +224,13 @@ async def generate_answer(state: OverallState) -> OutputState:
     ])
 
     writer({
-        "log": "Response has been generated",
-        "sources": state["sources"]
+        "log": "Response has been generated"
     })
 
     return {
         "response": response.content,
         "sources": state["sources"],
-        "messages": [AIMessage(response.content)]
+        "messages": [AIMessage(content=response.content, additional_kwargs={"sources": state["sources"]})]
     }
 
 async def rewrite_queries(state: OverallState) -> OverallState:
@@ -262,19 +249,20 @@ async def rewrite_queries(state: OverallState) -> OverallState:
 
     queries_as_str = "\n\n".join(q for q in queries)
 
-    prompt = REWRITE_PROMPT.format(question=query, queries=queries_as_str, n=n)
+    prompt = REWRITE_PROMPT.format(question=query, queries=queries_as_str, n=n, date=format_curr_date)
 
     new_queries = await rewrite_llm.ainvoke([
         { "role": "user", "content": prompt }
     ])
 
-    message = ", ".join(query for query in new_queries.search_queries)
+    writer({
+        "log": "\n".join(query for query in new_queries.search_queries)
+    })
 
     return {
         "queries": new_queries.search_queries,
         "queries_retries": queries_retries + 1,
-        "sources": None,
-        "messages": [message]
+        "sources": None
     }
 
 async def generate_no_answer(state: OverallState) -> OutputState:
@@ -286,7 +274,7 @@ async def generate_no_answer(state: OverallState) -> OutputState:
     })
 
     response = f"There are no relevant search results on '{state["query"]}'"
-    message = AIMessage(response)
+    message = AIMessage(content=response)
 
     return {
         "response": response,
@@ -303,7 +291,7 @@ def response(state: OverallState) -> OutputState:
     })
 
     response = state["response"]
-    message = AIMessage(response)
+    message = AIMessage(content=response)
 
     return {
         "response": response,

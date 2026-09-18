@@ -28,20 +28,9 @@ class ChatMessageResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 class ConvoChatsResponse(ConvoInfoResponse):
-    chats: list[ChatMessageResponse] = []
+    chats: list[ChatMessageResponse]
 
     model_config = ConfigDict(from_attributes=True)
 
 # ---Chats---
 
-class SendChat(BaseModel):
-    query: str
-
-class SaveChat(BaseModel):
-    role: str
-    content: str
-    sources: list[dict[str, Any]]
-
-class ChatResponse(BaseModel):
-    response: str
-    sources: list[dict[str, Any]]
