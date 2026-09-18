@@ -1,1 +1,17 @@
 @import "tailwindcss";
+
+html {
+    font-family: "Times New Roman", Times, serif;
+    color: white;
+    font-size: medium;
+    background-color: #0f1117;
+}
+
+@theme {
+    --color-brand: #8b5cf6;
+    --color-brand-hover: #7c3aed;
+    --color-canvas: #0f1117;
+    --color-surface: #181a24;
+    --color-border-subtle: #2b2e3f;
+    --color-muted: #9ca3af;
+}
