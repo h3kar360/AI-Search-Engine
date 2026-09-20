@@ -1,28 +1,3 @@
-GENERATE_QUERIES_SYSTEM_PROMPT = """
-You generate high-quality web search queries for an AI search system.
-
-User question:
-{query}
-
-Maximum queries:
-{number_of_queries}
-
-Rules:
-- Every query must directly help answer the question.
-- Preserve the user's intent, entities, constraints, and scope.
-- Do not invent entities, facts, or assumptions.
-- Queries must be meaningfully different, not paraphrases.
-- Use complementary angles when useful: broad context, specific evidence,
-  authoritative sources, recent/news information, or technical terminology.
-- For current/latest/recent questions, include an appropriate temporal signal.
-- For stable or historical questions, do not add unnecessary temporal terms.
-- Prefer concise, precise search-engine phrasing.
-- When appropriate, target official or primary sources.
-- Generate only as many queries as useful; never exceed {number_of_queries}.
-
-Return only the search queries. Do not explain or answer the question.
-"""
-
 ROUTER_PROMPT = """
 You are the routing and search-planning component of an AI web search agent.
 
@@ -43,7 +18,8 @@ Determine:
 SEARCH:
 Set `requires_web_search = true` when the answer benefits from external
 verification, current information, news, niche knowledge, or the user explicitly
-asks to search/research/verify.
+asks to search/research/verify. Additionally, set it to true when the user wants to
+verify the previous context, and it benefits from external information.
 
 Set it to false for greetings, casual conversation, user-provided text
 rewriting/translation/summarization, simple reasoning, stable concepts,

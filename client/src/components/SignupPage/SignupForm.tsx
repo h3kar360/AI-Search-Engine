@@ -1,20 +1,20 @@
 import { NavLink } from "react-router-dom";
 
-const LoginForm = () => {
-    const login = () => {};
+const SignupForm = () => {
+    const signup = () => {};
 
     return (
         <form
-            onSubmit={login}
+            onSubmit={signup}
             className="w-full max-w-md rounded-2xl bg-surface p-8 shadow-xl flex flex-col gap-5"
         >
             <div className="mb-2">
                 <h1 className="text-center text-3xl font-semibold tracking-tight">
-                    Sign in
+                    Sign Up
                 </h1>
 
                 <p className="mt-2 text-center text-sm text-muted">
-                    Welcome back. Sign in to continue.
+                    Welcome new user. Sign up to continue.
                 </p>
             </div>
 
@@ -79,20 +79,20 @@ const LoginForm = () => {
                     active:scale-[0.98]
                 "
             >
-                Sign in
+                Sign up
             </button>
 
             <p className="text-center text-sm text-muted">
-                Don't have an account yet?
+                Already have an account?
                 <NavLink
-                    to="/signup"
+                    to="/login"
                     className="pl-1 text-brand hover:text-brand-hover hover:underline"
                 >
-                    Create an account
+                    log in to your account
                 </NavLink>
             </p>
         </form>
     );
 };
 
-export default LoginForm;
+export default SignupForm;

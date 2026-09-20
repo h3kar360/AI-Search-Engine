@@ -84,7 +84,10 @@ const ChatInput = ({ messages, setMessages }: ChatInfo) => {
                 buffer = lines.pop() || "";
 
                 for (const line of lines) {
-                    if (!line.startsWith("data: ")) continue;
+                    if (!line.startsWith("data: ")) {
+                        console.log(line);
+                        continue;
+                    }
 
                     try {
                         const data = JSON.parse(line.slice(6));
