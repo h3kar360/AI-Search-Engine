@@ -27,7 +27,7 @@ const ChatInput = ({ messages, setMessages }: ChatInfo) => {
             messages
                 .map((message) => `${message.role}: ${message.content}`)
                 .join("\n") +
-            `\nThe actual query:${input}`;
+            `\n\nThis is the query:${input}`;
 
         // convert state to form data
         const formData = new FormData();

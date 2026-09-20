@@ -1,6 +1,11 @@
 import { useEffect, useRef } from "react";
 
 import { GiMagicLamp } from "react-icons/gi";
+import Markdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
+import "katex/dist/katex.min.css";
 
 import type { Message } from "../../types/chat";
 
@@ -43,7 +48,14 @@ const ChatPanel = ({ messages }: ChatInfo) => {
                                         <div key={index}>{"> " + log}</div>
                                     ))}
                                 </div>
-                                <div>{message.content}</div>
+                                <div>
+                                    <Markdown
+                                        remarkPlugins={[remarkGfm, remarkMath]}
+                                        rehypePlugins={[rehypeKatex]}
+                                    >
+                                        {message.content}
+                                    </Markdown>
+                                </div>
                                 <div className="flex flex-row gap-2 py-4 flex-wrap">
                                     {message.sources?.map((source, index) => (
                                         <a

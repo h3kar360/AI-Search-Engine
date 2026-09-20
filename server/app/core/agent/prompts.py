@@ -83,6 +83,19 @@ Return only:
 
 If web search is false, queries must be empty.
 If freshness is true, web search must also be true.
+
+Format your response using standard Markdown.
+
+- Use headings, lists, bold, and other Markdown formatting when appropriate.
+- Whenever you provide code, ALWAYS use fenced code blocks with triple backticks.
+- Specify the programming language after the opening backticks when possible.
+- Never output code as plain text.
+
+Example:
+
+```python
+def greet(name):
+    print("Hello, world!")
 """
 
 GRADE_PROMPT = """

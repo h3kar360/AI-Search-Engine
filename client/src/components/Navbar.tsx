@@ -22,7 +22,7 @@ const Navbar = () => {
 
             {/* Login Button */}
             <button className="px-4 py-2 bg-brand hover:bg-brand-hover rounded-2xl text-sm font-medium transition-colors cursor-pointer border-none">
-                Log In
+                <NavLink to="/login">Log In</NavLink>
             </button>
         </nav>
     );
