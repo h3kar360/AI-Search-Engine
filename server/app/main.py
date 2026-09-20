@@ -1,12 +1,19 @@
+import os
+
 from contextlib import asynccontextmanager
 from sqlalchemy import text
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from dotenv import load_dotenv
 
 from app.api.v1.router import router
 from app.db.database import engine
 from app.db.session import Base
 from app.db.agent_memory import get_checkpointer, get_store
 from app.core.agent.graph import create_graph
+
+load_dotenv()
+CLIENT_URL = os.getenv("CLIENT_URL")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -30,6 +37,14 @@ app = FastAPI(
     description="An AI search engine",
     version="1.0.0",
     lifespan=lifespan
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[CLIENT_URL],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"]
 )
 
 app.include_router(router, prefix="/api/v1")

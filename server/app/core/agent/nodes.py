@@ -21,7 +21,7 @@ from datetime import datetime
 curr_date = datetime.now()
 format_curr_date = curr_date.strftime("%B %d, %Y")
 
-n = 3
+n = 4
 
 summarization_node = SummarizationNode(
     token_counter=count_tokens_approximately,
@@ -89,7 +89,7 @@ async def call_web_search(state: SearchingDistributorState) -> OverallState:
     writer = get_stream_writer()
 
     writer({
-        "log": f"Calling web search tool to search about {state['query']}"
+        "log": f"Calling web search tool to search the generated {state["query"]}"
     })
 
     call_id = f"call_{uuid.uuid4().hex[:8]}"
@@ -98,6 +98,7 @@ async def call_web_search(state: SearchingDistributorState) -> OverallState:
         "name": "web_search_tool",
         "args": {
             "query": state["query"],
+            "requires_freshness": state["requires_freshness"],
             "max_results": state["max_results"]
         },
         "id": call_id,
@@ -156,7 +157,7 @@ async def embed_store_search(state: OverallState) -> OverallState:
 
     # search for relevant content/chunk from original query
     writer({
-        "log": f"Using retrieved search results to formulate an answer on {state["query"]}"
+        "log": f"Using retrieved search results to formulate an answer"
     })
 
     retrieved_docs = await retriever.ainvoke(state["query"])
@@ -167,7 +168,9 @@ async def embed_store_search(state: OverallState) -> OverallState:
     # format the documents to string to be placed for messages
     for doc in retrieved_docs:
         docs_page_contents.append(doc.page_content)
-        docs_sources.append(doc.metadata.get("source", "Unknown"))
+        docs_sources.append(doc.metadata.get("source"))
+            
+        
 
     docs_as_text = "\n\n".join(docs_page_contents)
 
@@ -209,7 +212,7 @@ async def embed_store_search(state: OverallState) -> OverallState:
     }
 
 async def generate_answer(state: OverallState) -> OutputState:
-    """Generate an answer based on all the context given and the user's query"""
+    """Generate an answer based on all the context given and the user's query"""    
     writer = get_stream_writer()
     
     writer({

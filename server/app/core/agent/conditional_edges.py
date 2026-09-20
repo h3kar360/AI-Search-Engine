@@ -12,6 +12,7 @@ from datetime import datetime
 def continue_to_search(state: OverallState) -> list[Send] | str:
     """Sends parallel nodes to search for each queries generated"""
     requires_search = state.get("requires_search", False)
+    requires_freshness = state.get("requires_freshness", False)
     queries = state.get("queries", [])
 
     writer = get_stream_writer()
@@ -26,11 +27,14 @@ def continue_to_search(state: OverallState) -> list[Send] | str:
         "log": "Allocating parallel agents to search the web"
     })
 
+    print(requires_freshness)
+
     sends = []
     for query in state.get("queries", []):
         payload: SearchingDistributorState = {
             "query": query,
-            "max_results": 2
+            "requires_freshness": requires_freshness,
+            "max_results": 5
         }
         
         sends.append(Send("call_web_search", payload))

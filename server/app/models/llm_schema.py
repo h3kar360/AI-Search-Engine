@@ -16,6 +16,10 @@ class RouteWebSearch(BaseModel):
         description="True if the user's request requires external web search for a relevant response; False for direct answers or greetings."
     )
 
+    requires_freshness: bool = Field(
+        description="True if the user's request requires recent and up-to-date searches; False if search is general."
+    )
+
     search_queries: list[str] = Field(
         default_factory=list,
         description="To write multiple relevant queries that do not overlap, but will generate meaningful queries that can make the most out of the search results in the internet. Only if requires_tool is True"

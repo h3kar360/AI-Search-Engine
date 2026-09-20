@@ -5,7 +5,7 @@ const Navbar = () => {
     return (
         <nav className="fixed top-0 left-0 right-0 h-15 z-50 flex items-center justify-between px-6">
             <div
-                className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-white/15 via-white/5 to-transparent pointer-events-none -z-10"
+                className="absolute top-0 left-0 right-0 h-24 bg-gradient-to-b from-white/30 via-white/10 to-transparent pointer-events-none -z-10"
                 aria-hidden="true"
             />
 

@@ -30,7 +30,9 @@ async def stream_agent(graph: StateGraph, input: dict, context: Context | None, 
             msg, metadata = chunk_data
             payload = {
                 "type": "messages",
+                "role": msg.type,
                 "message": msg.content,
+                "additional_kwargs": msg.additional_kwargs,
                 "node": metadata.get("langgraph_node", "")
             }
 

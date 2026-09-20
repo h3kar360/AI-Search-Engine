@@ -24,6 +24,7 @@ class OverallState(MessagesState, total=False):
     sources: Annotated[list[str], reset_add_list_reducers]
     search_result: str
     requires_search: bool
+    requires_freshness: bool
     response: str
     retrieved_docs: Annotated[list[Document], reset_add_list_reducers]
     queries_retries: int
@@ -31,6 +32,7 @@ class OverallState(MessagesState, total=False):
 
 class SearchingDistributorState(TypedDict):
     query: str
+    requires_freshness: bool
     max_results: int
 
 class OutputState(MessagesState):
