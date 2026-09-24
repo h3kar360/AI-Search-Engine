@@ -4,6 +4,7 @@ import {
     createRoutesFromElements,
     RouterProvider,
 } from "react-router-dom";
+import { AuthProvider } from "./context/AuthContext";
 import MainLayout from "./layouts/MainLayout";
 import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
@@ -20,7 +21,11 @@ const App = () => {
         ),
     );
 
-    return <RouterProvider router={router} />;
+    return (
+        <AuthProvider>
+            <RouterProvider router={router} />
+        </AuthProvider>
+    );
 };
 
 export default App;

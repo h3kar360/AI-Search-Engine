@@ -85,6 +85,7 @@ const ChatInput = ({ messages, setMessages }: ChatInfo) => {
 
                 for (const line of lines) {
                     if (!line.startsWith("data: ")) {
+                        console.log("error?");
                         console.log(line);
                         continue;
                     }

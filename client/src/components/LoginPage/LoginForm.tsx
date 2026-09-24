@@ -1,7 +1,34 @@
-import { NavLink } from "react-router-dom";
+import React, { useState } from "react";
+import { NavLink, useNavigate } from "react-router-dom";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { auth } from "../../config/firebase";
 
 const LoginForm = () => {
-    const login = () => {};
+    const [email, setEmail] = useState<string>("");
+    const [password, setPassword] = useState<string>("");
+    const [isLoading, setIsLoading] = useState<boolean>(false);
+
+    const navigate = useNavigate();
+
+    const login = async (e: React.SubmitEvent) => {
+        e.preventDefault();
+        setIsLoading(true);
+
+        try {
+            const userCredentials = await signInWithEmailAndPassword(
+                auth,
+                email,
+                password,
+            );
+            const user = userCredentials.user;
+
+            if (user) navigate("/");
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setIsLoading(true);
+        }
+    };
 
     return (
         <form
@@ -39,6 +66,7 @@ const LoginForm = () => {
                         focus:ring-2
                         focus:ring-brand/40
                     "
+                    onChange={(e) => setEmail(e.target.value)}
                 />
             </div>
 
@@ -63,6 +91,7 @@ const LoginForm = () => {
                         focus:ring-2
                         focus:ring-brand/40
                     "
+                    onChange={(e) => setPassword(e.target.value)}
                 />
             </div>
 
@@ -78,6 +107,7 @@ const LoginForm = () => {
                     hover:bg-brand-hover
                     active:scale-[0.98]
                 "
+                disabled={isLoading}
             >
                 Sign in
             </button>

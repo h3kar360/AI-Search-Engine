@@ -1,7 +1,35 @@
-import { NavLink } from "react-router-dom";
+import React, { useState } from "react";
+import { NavLink, useNavigate } from "react-router-dom";
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import { auth } from "../../config/firebase";
 
 const SignupForm = () => {
-    const signup = () => {};
+    const [email, setEmail] = useState<string>("");
+    const [password, setPassword] = useState<string>("");
+    const [isLoading, setIsLoading] = useState<boolean>(false);
+
+    const navigate = useNavigate();
+
+    const signup = async (e: React.SubmitEvent) => {
+        e.preventDefault();
+        setIsLoading(true);
+
+        try {
+            const userCredentials = await createUserWithEmailAndPassword(
+                auth,
+                email,
+                password,
+            );
+
+            const user = userCredentials.user;
+
+            if (user) navigate("/");
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     return (
         <form
@@ -39,6 +67,7 @@ const SignupForm = () => {
                         focus:ring-2
                         focus:ring-brand/40
                     "
+                    onChange={(e) => setEmail(e.target.value)}
                 />
             </div>
 
@@ -63,6 +92,7 @@ const SignupForm = () => {
                         focus:ring-2
                         focus:ring-brand/40
                     "
+                    onChange={(e) => setPassword(e.target.value)}
                 />
             </div>
 
@@ -78,6 +108,7 @@ const SignupForm = () => {
                     hover:bg-brand-hover
                     active:scale-[0.98]
                 "
+                disabled={isLoading}
             >
                 Sign up
             </button>
