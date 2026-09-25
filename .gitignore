@@ -2,6 +2,9 @@
 __pycache__/
 *.pyc
 
+# Secrets
+server/secrets/
+
 # Virtual environment
 .venv/
 venv/

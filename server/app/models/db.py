@@ -15,6 +15,11 @@ class Conversations(Base):
         server_default=text("gen_random_uuid()")
     )
 
+    user_id: Mapped[str] = mapped_column(
+        String,
+        nullable=False
+    )
+
     title: Mapped[str | None] = mapped_column(
         String,
         default="Untitled",

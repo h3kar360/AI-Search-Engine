@@ -1,13 +1,14 @@
 import json
 import uuid
 
-from fastapi import APIRouter, Form, Request, BackgroundTasks
+from fastapi import APIRouter, Form, Request, BackgroundTasks, Depends
 from fastapi.responses import StreamingResponse
 
 from app.core.stream_agent import stream_agent
 from app.core.agent.memory import process_memory
 from app.core.agent.graph import create_graph
 from app.core.agent.context import Context
+from app.dependencies import get_current_user
 
 chat_router = APIRouter()
 

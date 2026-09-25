@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useListeningAuth } from "../../context/AuthContext";
 import { HiArrowSmUp } from "react-icons/hi";
 
 import type {
@@ -18,20 +19,23 @@ const ChatInput = ({ messages, setMessages }: ChatInfo) => {
     const [input, setInput] = useState<string>("");
     const [isLoading, setIsLoading] = useState<boolean>(false);
 
+    const { user } = useListeningAuth();
+
     const handleSubmit = async () => {
         if (!input.trim() || isLoading) return;
 
         // only for guests
-        const guestMessage =
-            "context:\n" +
-            messages
-                .map((message) => `${message.role}: ${message.content}`)
-                .join("\n") +
-            `\n\nThis is the query:${input}`;
+        const message = user
+            ? input
+            : "context:\n" +
+              messages
+                  .map((message) => `${message.role}: ${message.content}`)
+                  .join("\n") +
+              `\n\nThis is the query:${input}`;
 
         // convert state to form data
         const formData = new FormData();
-        formData.append("user_message", guestMessage);
+        formData.append("user_message", message);
 
         const humanMessage: Message = {
             role: "human",
@@ -54,14 +58,25 @@ const ChatInput = ({ messages, setMessages }: ChatInfo) => {
 
         try {
             setIsLoading(true);
+            let user_id: string = "";
 
-            const response = await fetch(
-                `${import.meta.env.VITE_API_URL}/api/v1/conversations/chat`,
-                {
-                    method: "POST",
-                    body: formData,
-                },
-            );
+            if (user) user_id = await user.getIdToken();
+
+            const response = user
+                ? await fetch(
+                      `${import.meta.env.VITE_API_URL}/api/${import.meta.env.VITE_API_VERSION}/conversations/chat/${user_id}`,
+                      {
+                          method: "POST",
+                          body: formData,
+                      },
+                  )
+                : await fetch(
+                      `${import.meta.env.VITE_API_URL}/api/${import.meta.env.VITE_API_VERSION}/conversations/chat`,
+                      {
+                          method: "POST",
+                          body: formData,
+                      },
+                  );
 
             if (!response.ok)
                 throw new Error(`HTTP Error, status=${response.status}`);

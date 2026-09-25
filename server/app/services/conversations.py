@@ -8,21 +8,24 @@ from app.models.schema import InsertConvo
 
 from langgraph.graph import StateGraph
 
-async def create_conversation(db: AsyncSession, new_convo: InsertConvo) -> Conversations:
-    db_convo = Conversations(**new_convo.model_dump())
+async def create_conversation(db: AsyncSession, new_convo: InsertConvo, user_id: str) -> Conversations:
+    db_convo = Conversations(**new_convo.model_dump(), user_id=user_id)
     db.add(db_convo)
     await db.commit()
     await db.refresh(db_convo)
     return db_convo
 
-async def get_all_conversations(db: AsyncSession) -> list[Conversations]:
-    result = await db.execute(select(Conversations))
-    return list(result.scalars().all())
-
-async def get_conversation_by_id(db: AsyncSession, graph: StateGraph, id: uuid.UUID) -> list[dict] | None:
+async def get_all_conversations(db: AsyncSession, user_id: str) -> list[Conversations]:
     result = await db.execute(
         select(Conversations)
-        .where(Conversations.id == id)
+        .where(Conversations.user_id == user_id)
+    )
+    return list(result.scalars().all())
+
+async def get_conversation_by_id(db: AsyncSession, graph: StateGraph, id: uuid.UUID, user_id: str) -> dict | None:
+    result = await db.execute(
+        select(Conversations)
+        .where(Conversations.id == id, Conversations.user_id == user_id)
     )
 
     convo_exists = result.scalar_one_or_none()
@@ -32,7 +35,7 @@ async def get_conversation_by_id(db: AsyncSession, graph: StateGraph, id: uuid.U
 
     config = {
         "configurable": {
-            "thread_id": id
+            "thread_id": str(id)
         }
     }
 
@@ -61,23 +64,23 @@ async def get_conversation_by_id(db: AsyncSession, graph: StateGraph, id: uuid.U
         "chats": chat_history
     }
 
-async def update_conversation(db: AsyncSession, id: uuid.UUID, updated_convo: InsertConvo) -> Conversations | None:
+async def update_conversation(db: AsyncSession, id: uuid.UUID, updated_convo: InsertConvo, user_id: str) -> Conversations | None:
     result = await db.execute(
         update(Conversations)
-        .where(Conversations.id == id)
-        .values(**updated_convo.model_dump())
+        .where(Conversations.id == id, user_id == user_id)
+        .values(**updated_convo.model_dump(), user_id=user_id)
         .returning(Conversations)
     )
 
     await db.commit()
     return result.scalar_one_or_none()
 
-async def delete_conversation(db: AsyncSession, id: uuid.UUID) -> uuid.UUID | None:
+async def delete_conversation(db: AsyncSession, id: uuid.UUID, user_id: str) -> uuid.UUID | None:
     result = await db.execute(
         delete(Conversations)
-        .where(Conversations.id == id)
+        .where(Conversations.id == id, Conversations.user_id == user_id)
         .returning(Conversations.id)
     )
 
     await db.commit()
-    return result.scalar_one_or_none
+    return result.scalar_one_or_none()

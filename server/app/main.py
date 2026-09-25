@@ -11,6 +11,8 @@ from app.db.database import engine
 from app.db.session import Base
 from app.db.agent_memory import get_checkpointer, get_store
 from app.core.agent.graph import create_graph
+# just initialize firebase in main
+from app.core.firebase import firebase_app
 
 load_dotenv()
 CLIENT_URL = os.getenv("CLIENT_URL")
@@ -18,8 +20,11 @@ CLIENT_URL = os.getenv("CLIENT_URL")
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     async with engine.begin() as conn:
+        # await conn.execute(text("DROP SCHEMA public CASCADE"))
+        # await conn.execute(text("CREATE SCHEMA public"))
+
         await conn.execute(text('CREATE EXTENSION IF NOT EXISTS vector'))
-        # await conn.run_sync(Base.metadata.drop_all)
+
         await conn.run_sync(Base.metadata.create_all)
 
     async with (
