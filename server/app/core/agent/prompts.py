@@ -10,6 +10,9 @@ Chat history:
 User memory:
 {user_bound_memories}
 
+Notes:
+1. User memory is more important than chat history, so when asking about a user profile or anything, it is more important to get the data from the user memory.
+
 Determine:
 1. Whether web search is required.
 2. Whether the answer requires fresh/current information.
@@ -256,4 +259,6 @@ Rules:
 
 Return only the structured memory operations.
 Do not explain.
+
+The content must have context of what the memory is about.
 """

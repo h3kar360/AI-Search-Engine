@@ -18,12 +18,12 @@ embeddings_dimensions = os.getenv("EMBEDDINGS_DIMENSIONS")
 
 POSTGRES_DATABASE_URL = f"postgresql://{db_username}:{db_password}@{db_host}:{db_port}/ai_search_db"
 
-embeddings = GoogleGenerativeAIEmbeddings(model=embeddings_model)
+embeddings = GoogleGenerativeAIEmbeddings(model=embeddings_model, output_dimensionality=embeddings_dimensions)
 
 @asynccontextmanager
 async def get_checkpointer():
     async with AsyncPostgresSaver.from_conn_string(POSTGRES_DATABASE_URL) as checkpointer:
-        # await checkpointer.setup()
+        await checkpointer.setup()
         yield checkpointer
 
 @asynccontextmanager
@@ -35,5 +35,5 @@ async def get_store():
             "dims": embeddings_dimensions
         }
     ) as store:
-        # await store.setup()
+        await store.setup()
         yield store

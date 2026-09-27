@@ -13,9 +13,10 @@ import type { Message } from "../../types/chat";
 interface ChatInfo {
     messages: Array<Message>;
     setMessages: Dispatch<SetStateAction<Array<Message>>>;
+    id: string | null;
 }
 
-const ChatInput = ({ messages, setMessages }: ChatInfo) => {
+const ChatInput = ({ messages, setMessages, id }: ChatInfo) => {
     const [input, setInput] = useState<string>("");
     const [isLoading, setIsLoading] = useState<boolean>(false);
 
@@ -24,7 +25,7 @@ const ChatInput = ({ messages, setMessages }: ChatInfo) => {
     const handleSubmit = async () => {
         if (!input.trim() || isLoading) return;
 
-        // only for guests
+        // remember to also if the user is in a conversation.
         const message = user
             ? input
             : "context:\n" +
@@ -58,15 +59,16 @@ const ChatInput = ({ messages, setMessages }: ChatInfo) => {
 
         try {
             setIsLoading(true);
-            let user_id: string = "";
-
-            if (user) user_id = await user.getIdToken();
+            const token = await user?.getIdToken();
 
             const response = user
                 ? await fetch(
-                      `${import.meta.env.VITE_API_URL}/api/${import.meta.env.VITE_API_VERSION}/conversations/chat/${user_id}`,
+                      `${import.meta.env.VITE_API_URL}/api/${import.meta.env.VITE_API_VERSION}/conversations/chat/${id}`,
                       {
                           method: "POST",
+                          headers: {
+                              Authorization: `Bearer ${token}`,
+                          },
                           body: formData,
                       },
                   )
@@ -170,7 +172,7 @@ const ChatInput = ({ messages, setMessages }: ChatInfo) => {
                                         ...pastMessages,
                                         {
                                             ...lastMessage,
-                                            content: message[0].text || message,
+                                            content: message,
                                             logs: [],
                                             sources:
                                                 additional_kwargs?.sources ||
@@ -224,7 +226,7 @@ const ChatInput = ({ messages, setMessages }: ChatInfo) => {
                     <textarea
                         name="chatMessage"
                         placeholder="Ask anything..."
-                        className="bg-transparent text-lg w-full h-28
+                        className="bg-transparent lg:text-lg sm:text-sm w-full h-28 
                                     resize-none outline-none focus:ring-0 border-none
                                     placeholder:text-muted
                                     scrollbar-thin scrollbar-thumb-border-subtle/40 scrollbar-track-transparent"

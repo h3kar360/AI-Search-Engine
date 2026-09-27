@@ -13,11 +13,11 @@ from app.dependencies import get_current_user
 chat_router = APIRouter()
 
 @chat_router.post("/{id}")
-async def chat_with_llm(request: Request, background_tasks: BackgroundTasks, id: uuid.UUID, user_message: str = Form(...)):
+async def chat_with_llm(request: Request, background_tasks: BackgroundTasks, id: uuid.UUID, user_message: str = Form(...), user = Depends(get_current_user)):
     graph = request.app.state.graph
     store = request.app.state.store
     convo_id = id
-    user_id = "user_123"
+    user_id = user["uid"]
 
     config = {
             "configurable": {
@@ -25,7 +25,7 @@ async def chat_with_llm(request: Request, background_tasks: BackgroundTasks, id:
             }
         }
 
-    context = Context(user_id=user_id)
+    context = Context(user_id=str(user_id))
 
     initial_state = await graph.aget_state(config)
     initial_messages = initial_state.values.get("messages", [])

@@ -1,4 +1,5 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useListeningAuth } from "../../context/AuthContext";
 
 import { GiMagicLamp } from "react-icons/gi";
 import Markdown from "react-markdown";
@@ -8,13 +9,53 @@ import rehypeKatex from "rehype-katex";
 import "katex/dist/katex.min.css";
 
 import type { Message } from "../../types/chat";
+import type { SetStateAction, Dispatch } from "react";
 
 interface ChatInfo {
     messages: Array<Message>;
+    setMessages: Dispatch<SetStateAction<Array<Message>>>;
+    id: string | null;
 }
 
-const ChatPanel = ({ messages }: ChatInfo) => {
+const ChatPanel = ({ messages, setMessages, id }: ChatInfo) => {
+    const [isLoading, setIsLoading] = useState<boolean>(false);
     const bottomRef = useRef<HTMLDivElement>(null);
+    const { user } = useListeningAuth();
+
+    useEffect(() => {
+        const getConversationHistory = async () => {
+            setIsLoading(true);
+
+            try {
+                if (!user) return;
+
+                const token = await user.getIdToken();
+
+                const response = await fetch(
+                    `${import.meta.env.VITE_API_URL}/api/${import.meta.env.VITE_API_VERSION}/conversations/${id}`,
+                    {
+                        method: "GET",
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                        },
+                    },
+                );
+
+                if (!response.ok)
+                    throw new Error("Error fetching chat history");
+
+                const { chats } = await response.json();
+
+                setMessages(chats);
+            } catch (error) {
+                console.error(error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        getConversationHistory();
+    }, [user, id]);
 
     useEffect(() => {
         bottomRef.current?.scrollIntoView({
@@ -23,14 +64,14 @@ const ChatPanel = ({ messages }: ChatInfo) => {
     }, [messages]);
 
     return (
-        <div className="w-full flex-1 p-6 flex flex-col gap-10 scrollbar-thin scrollbar-thumb-border-subtle/40 scrollbar-track-transparent text-lg overflow-y-auto">
+        <div className="w-full flex-1 p-6 flex flex-col gap-10 scrollbar-thin scrollbar-thumb-border-subtle/40 scrollbar-track-transparent lg:text-lg sm:text-sm overflow-y-auto">
             {messages.length === 0 ? (
                 <div className="w-full h-full flex flex-col justify-center items-center gap-4 text-center text-4xl">
                     <GiMagicLamp size="3em" />
                     <div>Anything on your mind today?</div>
                 </div>
             ) : (
-                <div className="px-100">
+                <div className="w-full max-w-3xl mx-auto">
                     {messages.map((message, index) =>
                         message.role === "human" ? (
                             <div
@@ -62,7 +103,7 @@ const ChatPanel = ({ messages }: ChatInfo) => {
                                             key={index}
                                             href={source}
                                             target="_blank"
-                                            className="bg-surface py-2 px-4 rounded-4xl text-gray-400 text-sm"
+                                            className="bg-surface py-2 px-4 rounded-4xl text-gray-400"
                                         >
                                             {source}
                                         </a>

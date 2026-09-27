@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
     Route,
     createBrowserRouter,
@@ -9,14 +10,34 @@ import MainLayout from "./layouts/MainLayout";
 import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
+import ChatPage from "./pages/ChatPage";
 
 const App = () => {
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
     const router = createBrowserRouter(
         createRoutesFromElements(
             <Route path="/" element={<MainLayout />}>
-                <Route index element={<HomePage />} />
+                <Route
+                    index
+                    element={
+                        <HomePage
+                            isSidebarOpen={isSidebarOpen}
+                            setIsSidebarOpen={setIsSidebarOpen}
+                        />
+                    }
+                />
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/signup" element={<SignupPage />} />
+                <Route
+                    path="/conversations/:id"
+                    element={
+                        <ChatPage
+                            isSidebarOpen={isSidebarOpen}
+                            setIsSidebarOpen={setIsSidebarOpen}
+                        />
+                    }
+                />
             </Route>,
         ),
     );

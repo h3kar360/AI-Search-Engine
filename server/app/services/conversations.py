@@ -4,9 +4,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update, delete
 
 from app.models.db import Conversations
-from app.models.schema import InsertConvo
+from app.models.schema import InsertConvo   
 
 from langgraph.graph import StateGraph
+from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 
 async def create_conversation(db: AsyncSession, new_convo: InsertConvo, user_id: str) -> Conversations:
     db_convo = Conversations(**new_convo.model_dump(), user_id=user_id)
@@ -22,7 +23,7 @@ async def get_all_conversations(db: AsyncSession, user_id: str) -> list[Conversa
     )
     return list(result.scalars().all())
 
-async def get_conversation_by_id(db: AsyncSession, graph: StateGraph, id: uuid.UUID, user_id: str) -> dict | None:
+async def get_conversation_and_chats_by_id(db: AsyncSession, graph: StateGraph, id: uuid.UUID, user_id: str) -> dict | None:
     result = await db.execute(
         select(Conversations)
         .where(Conversations.id == id, Conversations.user_id == user_id)
@@ -57,7 +58,7 @@ async def get_conversation_by_id(db: AsyncSession, graph: StateGraph, id: uuid.U
         for message in messages 
         if message.type in ("human", "ai") and message.content and not (message.type == "ai" and getattr(message, "tool_calls", None))
     ]
-    
+
     return {
         "id": convo_exists.id,
         "title": convo_exists.title,
@@ -75,12 +76,20 @@ async def update_conversation(db: AsyncSession, id: uuid.UUID, updated_convo: In
     await db.commit()
     return result.scalar_one_or_none()
 
-async def delete_conversation(db: AsyncSession, id: uuid.UUID, user_id: str) -> uuid.UUID | None:
+async def delete_conversation(db: AsyncSession, id: uuid.UUID, user_id: str, checkpointer: AsyncPostgresSaver) -> uuid.UUID | None:
     result = await db.execute(
         delete(Conversations)
         .where(Conversations.id == id, Conversations.user_id == user_id)
         .returning(Conversations.id)
     )
 
+    deleted_id = result.scalar_one_or_none()
+
+    if deleted_id is None:
+        return None
+
     await db.commit()
-    return result.scalar_one_or_none()
+
+    await checkpointer.adelete_thread(id)
+
+    return deleted_id

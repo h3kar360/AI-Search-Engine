@@ -1,4 +1,5 @@
 import uuid
+import pprint
 
 from app.core.agent.state import InputState, OverallState, OutputState
 from app.core.llm import get_web_search_llm, get_llm, get_rewrite_llm, get_short_summarizer_llm
@@ -8,6 +9,7 @@ from app.core.agent.state import SearchingDistributorState
 from app.core.agent.prompts import ROUTER_PROMPT, GENERATE_PROMPT, REWRITE_PROMPT
 from app.db.vector_store import get_memory_vector_store
 from app.core.agent.context import Context
+from app.utils.normalize_text import normalize_text_content
 
 from langgraph.config import get_stream_writer
 from langchain.messages import AIMessage, ToolMessage
@@ -42,11 +44,20 @@ async def generate_queries_or_respond(state: InputState, runtime: Runtime[Contex
     user_id = getattr(runtime.context, "user_id", None)
     user_bound_memories = ""
 
+    print("memory before")
+
     # check whether store exists (if the user is a guest)
     if user_id and runtime.store:
+        print("getting memories")
         namespace = ("memories", user_id)
         memories = await runtime.store.asearch(namespace, query=query)
         user_bound_memories = "\n".join([data.value["data"] for data in memories])
+
+    print("memory after")
+
+    pprint.pp(memories)
+    print("----------")
+    print(user_bound_memories)
 
     writer = get_stream_writer()
 
@@ -211,30 +222,6 @@ async def embed_store_search(state: OverallState) -> OverallState:
         "messages": [message]
     }
 
-async def generate_answer(state: OverallState) -> OutputState:
-    """Generate an answer based on all the context given and the user's query"""    
-    writer = get_stream_writer()
-    
-    writer({
-        "log": "Generating response"
-    })
-
-    llm = get_llm()
-    prompt = GENERATE_PROMPT.format(question=state["query"], context=state["search_result"])
-
-    response = await llm.ainvoke([
-        { "role": "user", "content": prompt }
-    ])
-
-    writer({
-        "log": "Response has been generated"
-    })
-
-    return {
-        "response": response.content,
-        "sources": state["sources"],
-        "messages": [AIMessage(content=response.content, additional_kwargs={"sources": state["sources"]})]
-    }
 
 async def rewrite_queries(state: OverallState) -> OverallState:
     """Rewrite the queries to be better quality so it should get the most relevant and high quality information in the web"""
@@ -266,6 +253,33 @@ async def rewrite_queries(state: OverallState) -> OverallState:
         "queries": new_queries.search_queries,
         "queries_retries": queries_retries + 1,
         "sources": None
+    }
+
+async def generate_answer(state: OverallState) -> OutputState:
+    """Generate an answer based on all the context given and the user's query"""    
+    writer = get_stream_writer()
+    
+    writer({
+        "log": "Generating response"
+    })
+
+    llm = get_llm()
+    prompt = GENERATE_PROMPT.format(question=state["query"], context=state["search_result"])
+
+    response = await llm.ainvoke([
+        { "role": "user", "content": prompt }
+    ])
+
+    writer({
+        "log": "Response has been generated"
+    })
+
+    ai_response = normalize_text_content(response.content)
+
+    return {
+        "response": response.content,
+        "sources": state["sources"],
+        "messages": [AIMessage(content=ai_response, additional_kwargs={"sources": state["sources"]})]
     }
 
 async def generate_no_answer(state: OverallState) -> OutputState:

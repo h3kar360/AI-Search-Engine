@@ -20,8 +20,8 @@ CLIENT_URL = os.getenv("CLIENT_URL")
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     async with engine.begin() as conn:
-        # await conn.execute(text("DROP SCHEMA public CASCADE"))
-        # await conn.execute(text("CREATE SCHEMA public"))
+        await conn.execute(text("DROP SCHEMA public CASCADE"))
+        await conn.execute(text("CREATE SCHEMA public"))
 
         await conn.execute(text('CREATE EXTENSION IF NOT EXISTS vector'))
 
@@ -32,6 +32,7 @@ async def lifespan(app: FastAPI):
         get_store() as store
     ):
         app.state.store = store
+        app.state.checkpointer = checkpointer
         app.state.graph = await create_graph(checkpointer=checkpointer, store=store)
         yield
 

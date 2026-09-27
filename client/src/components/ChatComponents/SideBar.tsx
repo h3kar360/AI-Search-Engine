@@ -1,4 +1,11 @@
-import React, { useEffect, useState } from "react";
+import React, {
+    useEffect,
+    useState,
+    type Dispatch,
+    type SetStateAction,
+} from "react";
+import { useIsMobile } from "../../hooks/IsMobile";
+import { useNavigate } from "react-router-dom";
 import { useListeningAuth } from "../../context/AuthContext";
 import { RxCross2 } from "react-icons/rx";
 import { BsLayoutSidebar } from "react-icons/bs";
@@ -9,12 +16,18 @@ interface Convo {
     title: string;
 }
 
-const SideBar = () => {
+interface SideBarProp {
+    isSidebarOpen: boolean;
+    setIsSidebarOpen: Dispatch<SetStateAction<boolean>>;
+}
+
+const SideBar = ({ isSidebarOpen, setIsSidebarOpen }: SideBarProp) => {
     const [convos, setConvos] = useState<Convo[]>([]);
     const [convoTitle, setConvoTitle] = useState("");
     const [isLoading, setIsLoading] = useState(false);
-    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
+    const navigate = useNavigate();
+    const isMobile = useIsMobile();
     const { user } = useListeningAuth();
 
     useEffect(() => {
@@ -69,6 +82,8 @@ const SideBar = () => {
             if (!response.ok) {
                 throw new Error("Conversation not deleted");
             }
+
+            return navigate("/");
         } catch (error) {
             console.error(error);
         } finally {
@@ -104,7 +119,11 @@ const SideBar = () => {
                 throw new Error("Error when inserting new conversation");
             }
 
+            const { id } = await response.json();
+
             setConvoTitle("");
+            if (isMobile) setIsSidebarOpen(false);
+            return navigate(`/conversations/${id}`);
         } catch (error) {
             console.error(error);
         } finally {
@@ -196,6 +215,11 @@ const SideBar = () => {
                                     transition-colors
                                     duration-200
                                 "
+                                onClick={() => {
+                                    if (isMobile) setIsSidebarOpen(false);
+
+                                    navigate(`/conversations/${convo.id}`);
+                                }}
                             >
                                 <p className="truncate pr-2">{convo.title}</p>
 
@@ -221,29 +245,13 @@ const SideBar = () => {
                 </div>
             </div>
             {/* Create conversation */}
-            <div
-                className={`
-                absolute
-                bottom-6
-                right-8
-                transition-all
-                duration-300
-                ease-out
-                ${
-                    isSidebarOpen
-                        ? "opacity-100 translate-y-0 pointer-events-auto"
-                        : "opacity-0 translate-y-2 pointer-events-none"
-                }
-            `}
-            >
+            <div className="absolute bottom-6 left-4 right-4">
                 <form
                     onSubmit={createConvo}
-                    className="
-                        group
-                        relative
-                        h-12
-                        w-12
+                    className={`
                         flex
+                        h-12
+                        w-full
                         items-center
                         rounded-full
                         bg-surface
@@ -251,52 +259,39 @@ const SideBar = () => {
                         border-border-subtle/50
                         shadow-xl
                         overflow-hidden
-                        transition-[width]
-                        duration-300
-                        ease-[cubic-bezier(0.22,1,0.36,1)]
-                        hover:w-64
-                    "
+                        ${
+                            isSidebarOpen
+                                ? "opacity-100 translate-y-0 pointer-events-auto"
+                                : "opacity-0 translate-y-2 pointer-events-none"
+                        }
+                    `}
                 >
-                    <div
+                    <input
+                        type="text"
+                        value={convoTitle}
+                        onChange={(e) => setConvoTitle(e.target.value)}
+                        placeholder="Add a conversation..."
+                        disabled={isLoading}
                         className="
-                            w-0
-                            overflow-hidden
-                            opacity-0
-                            transition-all
-                            duration-200
-                            ease-out
-                            group-hover:w-52
-                            group-hover:opacity-100
+                            min-w-0
+                            flex-1
+                            h-full
+                            bg-transparent
+                            px-4
+                            outline-none
+                            text-sm
+                            placeholder:text-muted/60
                         "
-                    >
-                        <input
-                            type="text"
-                            value={convoTitle}
-                            onChange={(e) => setConvoTitle(e.target.value)}
-                            placeholder="Add a conversation..."
-                            disabled={isLoading}
-                            className="
-                                w-full
-                                h-12
-                                bg-transparent
-                                pl-4
-                                pr-2
-                                outline-none
-                                text-sm
-                                placeholder:text-muted/60
-                            "
-                        />
-                    </div>
+                    />
+
                     <button
                         type="submit"
                         disabled={isLoading}
                         aria-label="Create conversation"
                         className="
-                            absolute
-                            right-0
-                            top-0
-                            w-12
-                            h-12
+                            w-10
+                            h-10
+                            mr-1
                             shrink-0
                             rounded-full
                             flex
@@ -312,15 +307,7 @@ const SideBar = () => {
                             disabled:cursor-not-allowed
                         "
                     >
-                        <IoAdd
-                            className="
-                                text-2xl
-                                transition-transform
-                                duration-500
-                                ease-out
-                                group-hover:rotate-180
-                            "
-                        />
+                        <IoAdd className="text-2xl" />
                     </button>
                 </form>
             </div>

@@ -23,7 +23,7 @@ class ChatMessageResponse(BaseModel):
     id: uuid.UUID
     role: str
     content: str
-    sources: list[dict[str, Any]]
+    sources: list[str]
 
     model_config = ConfigDict(from_attributes=True)
 

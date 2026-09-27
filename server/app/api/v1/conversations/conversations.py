@@ -25,7 +25,7 @@ async def get_convo(request: Request, id: uuid.UUID, user = Depends(get_current_
     user_id = user["uid"]
     graph = request.app.state.graph
 
-    convo = await conversations.get_conversation_by_id(db, graph=graph, id=id, user_id=user_id)
+    convo = await conversations.get_conversation_and_chats_by_id(db, graph=graph, id=id, user_id=user_id)
 
     if convo is None:
         raise HTTPException(
@@ -49,10 +49,11 @@ async def update_convo_title(id: uuid.UUID, updated_convo: InsertConvo, user = D
     return convo
 
 @convo_router.delete("/{id}", response_model=RaiseMessage)
-async def delete_convo(id: uuid.UUID, user = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def delete_convo(request: Request, id: uuid.UUID, user = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     user_id = user["uid"]
+    checkpointer = request.app.state.checkpointer
 
-    is_deleted = await conversations.delete_conversation(db, id, user_id)
+    is_deleted = await conversations.delete_conversation(db, id, user_id, checkpointer)
 
     if not is_deleted:
         raise HTTPException(
