@@ -44,20 +44,11 @@ async def generate_queries_or_respond(state: InputState, runtime: Runtime[Contex
     user_id = getattr(runtime.context, "user_id", None)
     user_bound_memories = ""
 
-    print("memory before")
-
     # check whether store exists (if the user is a guest)
     if user_id and runtime.store:
-        print("getting memories")
         namespace = ("memories", user_id)
         memories = await runtime.store.asearch(namespace, query=query)
         user_bound_memories = "\n".join([data.value["data"] for data in memories])
-
-    print("memory after")
-
-    pprint.pp(memories)
-    print("----------")
-    print(user_bound_memories)
 
     writer = get_stream_writer()
 

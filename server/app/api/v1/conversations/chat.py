@@ -2,7 +2,8 @@ import json
 import uuid
 
 from fastapi import APIRouter, Form, Request, BackgroundTasks, Depends
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, JSONResponse
+from redis_fastapi import rate_limit
 
 from app.core.stream_agent import stream_agent
 from app.core.agent.memory import process_memory
@@ -12,8 +13,16 @@ from app.dependencies import get_current_user
 
 chat_router = APIRouter()
 
-@chat_router.post("/{id}")
-async def chat_with_llm(request: Request, background_tasks: BackgroundTasks, id: uuid.UUID, user_message: str = Form(...), user = Depends(get_current_user)):
+@chat_router.post("/{id}", dependencies=[Depends(rate_limit(
+        "20/hour",
+        on_limit_exceeded=lambda r, res: JSONResponse(
+            { 
+                "error": "Conversation limit has been met", "retry_after": res.retry_after
+            }, status_code=429
+        )
+    ))])
+async def chat_with_llm(request: Request, background_tasks: BackgroundTasks, id: uuid.UUID, 
+                        user_message: str = Form(...), user = Depends(get_current_user)):
     graph = request.app.state.graph
     store = request.app.state.store
     convo_id = id
@@ -65,7 +74,14 @@ async def chat_with_llm(request: Request, background_tasks: BackgroundTasks, id:
         }
     )
 
-@chat_router.post("")
+@chat_router.post("", dependencies=[Depends(rate_limit(
+        "10/hour",
+        on_limit_exceeded=lambda r, res: JSONResponse(
+            { 
+                "error": "Conversation limit has been met", "retry_after": res.retry_after
+            }, status_code=429
+        )
+    ))])
 async def chat_with_llm_as_guest(user_message: str = Form(...)):
     graph = await create_graph(checkpointer=None, store=None)
 

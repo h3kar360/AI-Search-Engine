@@ -19,31 +19,35 @@ const HomePage = ({ isSidebarOpen, setIsSidebarOpen }: SideBarProp) => {
     const [messages, setMessages] = useState<Array<Message>>([]);
 
     return (
-        <section className="w-full h-[calc(100vh-3.75rem)] flex">
-            <SideBar
-                isSidebarOpen={isSidebarOpen}
-                setIsSidebarOpen={setIsSidebarOpen}
-            />
+        <>
             {user ? (
-                <div className="w-full h-full flex flex-col justify-center items-center gap-4 text-center text-4xl">
-                    <GiMagicLamp size="3em" />
-                    <div>Chat in an existing conversation</div>
-                </div>
+                <section className="w-full h-[calc(100vh-3.75rem)] flex">
+                    <SideBar
+                        isSidebarOpen={isSidebarOpen}
+                        setIsSidebarOpen={setIsSidebarOpen}
+                    />
+                    <div className="w-full h-full flex flex-col justify-center items-center gap-4 text-center text-4xl">
+                        <GiMagicLamp size="3em" />
+                        <div>Chat in an existing conversation</div>
+                    </div>
+                </section>
             ) : (
-                <div className="flex-1 min-w-0 flex flex-col">
-                    <ChatPanel
-                        messages={messages}
-                        setMessages={setMessages}
-                        id={null}
-                    />
-                    <ChatInput
-                        messages={messages}
-                        setMessages={setMessages}
-                        id={null}
-                    />
-                </div>
+                <section className="w-full h-[calc(100vh-3.75rem)] flex">
+                    <div className="flex-1 min-w-0 flex flex-col">
+                        <ChatPanel
+                            messages={messages}
+                            setMessages={setMessages}
+                            id={null}
+                        />
+                        <ChatInput
+                            messages={messages}
+                            setMessages={setMessages}
+                            id={null}
+                        />
+                    </div>
+                </section>
             )}
-        </section>
+        </>
     );
 };
 

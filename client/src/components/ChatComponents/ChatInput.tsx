@@ -19,6 +19,8 @@ interface ChatInfo {
 const ChatInput = ({ messages, setMessages, id }: ChatInfo) => {
     const [input, setInput] = useState<string>("");
     const [isLoading, setIsLoading] = useState<boolean>(false);
+    const [isRateLimit, setIsRateLimit] = useState<boolean>(false);
+    const [retryAfter, setRetryAfter] = useState<number>(0);
 
     const { user } = useListeningAuth();
 
@@ -80,115 +82,144 @@ const ChatInput = ({ messages, setMessages, id }: ChatInfo) => {
                       },
                   );
 
-            if (!response.ok)
-                throw new Error(`HTTP Error, status=${response.status}`);
-            if (!response.body) throw new Error("No response body received");
+            if (response.status === 429) {
+                const { retry_after } = await response.json();
 
-            // open streaming
-            const reader = response.body.getReader();
-            const decoder = new TextDecoder();
+                setIsRateLimit(true);
+                setRetryAfter(retry_after);
+            } else {
+                setIsRateLimit(false);
 
-            let buffer = "";
+                if (!response.ok)
+                    throw new Error(`HTTP Error, status=${response.status}`);
 
-            while (true) {
-                const { done, value } = await reader.read();
+                if (!response.body)
+                    throw new Error("No response body received");
 
-                if (done) break;
+                // open streaming
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
 
-                buffer += decoder.decode(value, { stream: true });
-                const lines = buffer.split("\n");
+                let buffer = "";
 
-                buffer = lines.pop() || "";
+                while (true) {
+                    const { done, value } = await reader.read();
 
-                for (const line of lines) {
-                    if (!line.startsWith("data: ")) {
-                        console.log("error?");
-                        console.log(line);
-                        continue;
-                    }
+                    if (done) break;
 
-                    try {
-                        const data = JSON.parse(line.slice(6));
+                    buffer += decoder.decode(value, { stream: true });
+                    const lines = buffer.split("\n");
 
-                        if (data.type === "custom") {
-                            const { log } = data;
+                    console.log(lines);
 
-                            setMessages((prevMessages): Array<Message> => {
-                                if (prevMessages.length === 0)
-                                    return prevMessages;
+                    buffer = lines.pop() || "";
 
-                                const pastMessages = prevMessages.slice(0, -1);
-                                const lastMessage = prevMessages.at(-1);
-
-                                if (!lastMessage || lastMessage.role !== "ai")
-                                    return prevMessages;
-
-                                return [
-                                    ...pastMessages,
-                                    {
-                                        ...lastMessage,
-                                        logs: [
-                                            ...(lastMessage.logs || []),
-                                            log,
-                                        ],
-                                        status: "thinking",
-                                    },
-                                ];
-                            });
-                        } else if (
-                            data.type === "messages" &&
-                            data.message !== ""
-                        ) {
-                            const { message, role, node, additional_kwargs } =
-                                data;
-
-                            setMessages((prevMessages): Array<Message> => {
-                                if (prevMessages.length === 0)
-                                    return prevMessages;
-
-                                const pastMessages = prevMessages.slice(0, -1);
-                                const lastMessage = prevMessages.at(-1);
-
-                                if (!lastMessage || lastMessage.role !== "ai")
-                                    return prevMessages;
-
-                                if (
-                                    role == "AIMessageChunk" &&
-                                    message.length > 0 &&
-                                    node == "generate_answer"
-                                ) {
-                                    return [
-                                        ...pastMessages,
-                                        {
-                                            ...lastMessage,
-                                            content:
-                                                lastMessage.content +
-                                                message[0].text,
-                                            status: "responding",
-                                        },
-                                    ];
-                                } else if (role == "ai") {
-                                    return [
-                                        ...pastMessages,
-                                        {
-                                            ...lastMessage,
-                                            content: message,
-                                            logs: [],
-                                            sources:
-                                                additional_kwargs?.sources ||
-                                                [],
-                                            status: "completed",
-                                        },
-                                    ];
-                                }
-
-                                return [...prevMessages];
-                            });
+                    for (const line of lines) {
+                        if (!line.startsWith("data: ")) {
+                            console.log("error?");
+                            console.log(line);
+                            continue;
                         }
 
-                        buffer += decoder.decode();
-                    } catch (error) {
-                        console.error(error);
+                        try {
+                            const data = JSON.parse(line.slice(6));
+
+                            if (data.type === "custom") {
+                                const { log } = data;
+
+                                setMessages((prevMessages): Array<Message> => {
+                                    if (prevMessages.length === 0)
+                                        return prevMessages;
+
+                                    const pastMessages = prevMessages.slice(
+                                        0,
+                                        -1,
+                                    );
+                                    const lastMessage = prevMessages.at(-1);
+
+                                    if (
+                                        !lastMessage ||
+                                        lastMessage.role !== "ai"
+                                    )
+                                        return prevMessages;
+
+                                    return [
+                                        ...pastMessages,
+                                        {
+                                            ...lastMessage,
+                                            logs: [
+                                                ...(lastMessage.logs || []),
+                                                log,
+                                            ],
+                                            status: "thinking",
+                                        },
+                                    ];
+                                });
+                            } else if (
+                                data.type === "messages" &&
+                                data.message !== ""
+                            ) {
+                                const {
+                                    message,
+                                    role,
+                                    node,
+                                    additional_kwargs,
+                                } = data;
+
+                                setMessages((prevMessages): Array<Message> => {
+                                    if (prevMessages.length === 0)
+                                        return prevMessages;
+
+                                    const pastMessages = prevMessages.slice(
+                                        0,
+                                        -1,
+                                    );
+                                    const lastMessage = prevMessages.at(-1);
+
+                                    if (
+                                        !lastMessage ||
+                                        lastMessage.role !== "ai"
+                                    )
+                                        return prevMessages;
+
+                                    if (
+                                        role == "AIMessageChunk" &&
+                                        message.length > 0 &&
+                                        node == "generate_answer"
+                                    ) {
+                                        return [
+                                            ...pastMessages,
+                                            {
+                                                ...lastMessage,
+                                                content:
+                                                    lastMessage.content +
+                                                    message[0].text,
+                                                status: "responding",
+                                            },
+                                        ];
+                                    } else if (role == "ai") {
+                                        return [
+                                            ...pastMessages,
+                                            {
+                                                ...lastMessage,
+                                                content: message,
+                                                logs: [],
+                                                sources:
+                                                    additional_kwargs?.sources ||
+                                                    [],
+                                                status: "completed",
+                                            },
+                                        ];
+                                    }
+
+                                    return [...prevMessages];
+                                });
+                            }
+
+                            buffer += decoder.decode();
+                        } catch (error) {
+                            console.error(error);
+                        }
                     }
                 }
             }
@@ -220,8 +251,15 @@ const ChatInput = ({ messages, setMessages, id }: ChatInfo) => {
 
             <form
                 onSubmit={sendChat}
-                className="relative z-20 w-full max-w-3xl mx-auto py-5 px-4 bg-canvas"
+                className="relative z-20 w-full max-w-3xl mx-auto py-5 bg-canvas"
             >
+                {isRateLimit ? (
+                    <div className="absolute -top-20 h-20 w-full rounded-4xl flex justify-center items-center bg-border-subtle">
+                        {`Your conversation has reached the limits. Retry after ${retryAfter}s`}
+                    </div>
+                ) : (
+                    ""
+                )}
                 <div className="flex justify-center items-end bg-surface rounded-2xl p-5 border border-border-subtle/50 shadow-2xl">
                     <textarea
                         name="chatMessage"

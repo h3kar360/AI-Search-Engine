@@ -259,6 +259,8 @@ const SideBar = ({ isSidebarOpen, setIsSidebarOpen }: SideBarProp) => {
                         border-border-subtle/50
                         shadow-xl
                         overflow-hidden
+                        transition-all
+                        duration-200
                         ${
                             isSidebarOpen
                                 ? "opacity-100 translate-y-0 pointer-events-auto"
@@ -286,7 +288,7 @@ const SideBar = ({ isSidebarOpen, setIsSidebarOpen }: SideBarProp) => {
 
                     <button
                         type="submit"
-                        disabled={isLoading}
+                        disabled={!convoTitle.trim() || isLoading}
                         aria-label="Create conversation"
                         className="
                             w-10

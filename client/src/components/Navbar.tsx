@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { NavLink } from "react-router-dom";
 import { GiMagicLamp } from "react-icons/gi";
 import { useListeningAuth } from "../context/AuthContext";
@@ -9,12 +10,14 @@ const Navbar = () => {
     const [isHover, setIsHover] = useState<boolean>(false);
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const { user } = useListeningAuth();
+    const navigate = useNavigate();
 
     const logout = async () => {
         try {
             setIsLoading(true);
 
             await signOut(auth);
+            navigate("/");
         } catch (error) {
             console.error(error);
         } finally {

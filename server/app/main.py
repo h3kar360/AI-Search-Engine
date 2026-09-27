@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager
 from sqlalchemy import text
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from redis_fastapi import FastAPIRedis
 from dotenv import load_dotenv
 
 from app.api.v1.router import router
@@ -20,8 +21,8 @@ CLIENT_URL = os.getenv("CLIENT_URL")
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     async with engine.begin() as conn:
-        await conn.execute(text("DROP SCHEMA public CASCADE"))
-        await conn.execute(text("CREATE SCHEMA public"))
+        # await conn.execute(text("DROP SCHEMA public CASCADE"))
+        # await conn.execute(text("CREATE SCHEMA public"))
 
         await conn.execute(text('CREATE EXTENSION IF NOT EXISTS vector'))
 
@@ -44,6 +45,8 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan
 )
+
+FastAPIRedis(app).lifespan().caching().rate_limiting()
 
 app.add_middleware(
     CORSMiddleware,
