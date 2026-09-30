@@ -78,7 +78,7 @@ const ChatPanel = ({ messages, setMessages, id }: ChatInfo) => {
                                 className="flex justify-end w-full"
                                 key={index}
                             >
-                                <div className="px-6 py-4 bg-surface rounded-4xl">
+                                <div className="px-6 py-4 bg-surface rounded-4xl my-2">
                                     {message.content}
                                 </div>
                             </div>
@@ -103,7 +103,7 @@ const ChatPanel = ({ messages, setMessages, id }: ChatInfo) => {
                                             key={index}
                                             href={source}
                                             target="_blank"
-                                            className="bg-surface py-2 px-4 rounded-4xl text-gray-400"
+                                            className="bg-surface py-2 px-4 rounded-4xl text-gray-400 text-sm max-w-60 truncate"
                                         >
                                             {source}
                                         </a>

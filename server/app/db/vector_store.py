@@ -28,10 +28,8 @@ pgvector_store = PGVector(
     connection=engine
 )
 
-in_memory_vector_store = InMemoryVectorStore(embeddings)
-
 def get_pgvector_store() -> PGVector:
     return pgvector_store
 
 def get_memory_vector_store() -> InMemoryVectorStore:
-    return in_memory_vector_store
+    return  InMemoryVectorStore(embeddings)

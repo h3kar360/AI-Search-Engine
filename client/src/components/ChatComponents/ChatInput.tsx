@@ -116,8 +116,6 @@ const ChatInput = ({ messages, setMessages, id }: ChatInfo) => {
 
                     for (const line of lines) {
                         if (!line.startsWith("data: ")) {
-                            console.log("error?");
-                            console.log(line);
                             continue;
                         }
 
@@ -214,6 +212,10 @@ const ChatInput = ({ messages, setMessages, id }: ChatInfo) => {
 
                                     return [...prevMessages];
                                 });
+                            }
+
+                            if (data.error) {
+                                console.error(data.error);
                             }
 
                             buffer += decoder.decode();

@@ -37,6 +37,8 @@ async def generate_queries_or_respond(state: InputState, runtime: Runtime[Contex
     """Call the model to generate a response based on the current state. Given
     the question, it will decide to generate queries to search online, or simply respond to the user.
     """
+    print("generate queries or respond node")
+
     query = state["query"]
     summarized_messages = state.get("summarized_messages") or state.get("messages", [])
 
@@ -83,11 +85,14 @@ async def generate_queries_or_respond(state: InputState, runtime: Runtime[Contex
         "queries": decision.search_queries,
         "requires_search": decision.requires_web_search,
         "response": decision.response,
-        "queries_retries": 0
+        "queries_retries": 0,
+        "sources": None
     }
 
 async def call_web_search(state: SearchingDistributorState) -> OverallState:
     """Call the web search tool to get most recent and relevant information on recent matters"""
+    print("call web search node")
+
     writer = get_stream_writer()
 
     writer({
@@ -128,6 +133,8 @@ async def call_web_search(state: SearchingDistributorState) -> OverallState:
 
 async def embed_store_search(state: OverallState) -> OverallState:   
     """Embed all the retrieved documents and store it to an in memory vector store, then it searches for the most relevant chunk based on the query""" 
+    print("embedding node")
+
     docs_to_store = state["retrieved_docs"]
 
     # initialize in memory vector store here so python garbage collector will delete the all in memory stored documents after function ends
@@ -216,6 +223,8 @@ async def embed_store_search(state: OverallState) -> OverallState:
 
 async def rewrite_queries(state: OverallState) -> OverallState:
     """Rewrite the queries to be better quality so it should get the most relevant and high quality information in the web"""
+    print("rewrite node")
+
     queries_retries = state["queries_retries"]
     queries = state["queries"]
     query = state["query"]
@@ -247,7 +256,9 @@ async def rewrite_queries(state: OverallState) -> OverallState:
     }
 
 async def generate_answer(state: OverallState) -> OutputState:
-    """Generate an answer based on all the context given and the user's query"""    
+    """Generate an answer based on all the context given and the user's query"""   
+    print("generate answer node")
+
     writer = get_stream_writer()
     
     writer({
@@ -275,6 +286,8 @@ async def generate_answer(state: OverallState) -> OutputState:
 
 async def generate_no_answer(state: OverallState) -> OutputState:
     """Generate no answer because there are no relevant context in the web"""
+    print("generate no answer node")
+
     writer = get_stream_writer()
         
     writer({
@@ -292,6 +305,8 @@ async def generate_no_answer(state: OverallState) -> OutputState:
 
 def response(state: OverallState) -> OutputState:
     """Parse the state from overall state to the output state"""
+    print("generate response node")
+
     writer = get_stream_writer()
         
     writer({
