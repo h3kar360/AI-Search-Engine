@@ -1,10 +1,14 @@
-from pathlib import Path
+import json
+import os
 
 import firebase_admin
 from firebase_admin import credentials
 
-BASE_DIR = Path(__file__).resolve().parent.parent.parent
-CREDENTIALS_PATH = BASE_DIR / "secrets" / "firebase-service-account.json";
+from dotenv import load_dotenv
 
-cred = credentials.Certificate(CREDENTIALS_PATH)
+load_dotenv()
+
+FIREBASE_SERVICE_ACCOUNT_CREDENTIALS = json.loads(os.environ["FIREBASE_SERVICE_ACCOUNT_JSON"])
+
+cred = credentials.Certificate(FIREBASE_SERVICE_ACCOUNT_CREDENTIALS)
 firebase_app = firebase_admin.initialize_app(cred)
