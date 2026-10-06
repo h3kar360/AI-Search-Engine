@@ -20,7 +20,7 @@ const ChatInput = ({ messages, setMessages, id }: ChatInfo) => {
     const [input, setInput] = useState<string>("");
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [isRateLimit, setIsRateLimit] = useState<boolean>(false);
-    const [retryAfter, setRetryAfter] = useState<number>(0);
+    const [retryAt, setRetryAt] = useState<string>("");
 
     const { user } = useListeningAuth();
 
@@ -83,10 +83,19 @@ const ChatInput = ({ messages, setMessages, id }: ChatInfo) => {
                   );
 
             if (response.status === 429) {
+                setIsRateLimit(true);
+
                 const { retry_after } = await response.json();
 
-                setIsRateLimit(true);
-                setRetryAfter(retry_after);
+                const now = new Date();
+                now.setSeconds(now.getSeconds() + retry_after);
+
+                const formattedDate = now
+                    .toISOString()
+                    .slice(0, 19)
+                    .replace("T", " ");
+
+                setRetryAt(formattedDate);
             } else {
                 setIsRateLimit(false);
 
@@ -257,7 +266,7 @@ const ChatInput = ({ messages, setMessages, id }: ChatInfo) => {
             >
                 {isRateLimit ? (
                     <div className="absolute -top-20 h-20 w-full rounded-4xl flex justify-center items-center bg-border-subtle">
-                        {`Your conversation has reached the limits. Retry after ${retryAfter}s`}
+                        {`Your conversation has reached the limits. Retry at ${retryAt}`}
                     </div>
                 ) : (
                     ""

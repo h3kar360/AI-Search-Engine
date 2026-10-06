@@ -15,7 +15,7 @@ from app.dependencies import user_identifier
 chat_router = APIRouter()
 
 @chat_router.post("/{id}", dependencies=[Depends(rate_limit(
-        "30/hour",
+        "25/hour",
         identifier=user_identifier,
         on_limit_exceeded=lambda r, res: JSONResponse(
             { 
@@ -77,7 +77,7 @@ async def chat_with_llm(request: Request, background_tasks: BackgroundTasks, id:
     )
 
 @chat_router.post("", dependencies=[Depends(rate_limit(
-        "10/hour",
+        "5/hour",
         identifier=user_identifier,
         on_limit_exceeded=lambda r, res: JSONResponse(
             { 
