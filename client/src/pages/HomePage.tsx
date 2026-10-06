@@ -1,5 +1,6 @@
 import { useState, type Dispatch, type SetStateAction } from "react";
 import { useListeningAuth } from "../context/AuthContext";
+import { useIsMobile } from "../hooks/IsMobile";
 
 import ChatPanel from "../components/ChatComponents/ChatPanel";
 import ChatInput from "../components/ChatComponents/ChatInput";
@@ -17,6 +18,7 @@ const HomePage = ({ isSidebarOpen, setIsSidebarOpen }: SideBarProp) => {
     const { user } = useListeningAuth();
 
     const [messages, setMessages] = useState<Array<Message>>([]);
+    const isMobile = useIsMobile();
 
     return (
         <>
@@ -26,13 +28,17 @@ const HomePage = ({ isSidebarOpen, setIsSidebarOpen }: SideBarProp) => {
                         isSidebarOpen={isSidebarOpen}
                         setIsSidebarOpen={setIsSidebarOpen}
                     />
-                    <div className="w-full h-full flex flex-col justify-center items-center gap-4 text-center text-4xl">
+                    <div
+                        className={`w-full h-full flex flex-col justify-center items-center gap-4 text-center text-4xl ${isSidebarOpen && isMobile ? "hidden" : ""}`}
+                    >
                         <GiMagicLamp size="3em" />
                         <div>Chat in an existing conversation</div>
                     </div>
                 </section>
             ) : (
-                <section className="w-full h-[calc(100vh-3.75rem)] flex">
+                <section
+                    className={`w-full h-[calc(100vh-3.75rem)] flex ${isSidebarOpen && isMobile ? "hidden" : ""}`}
+                >
                     <div className="flex-1 min-w-0 flex flex-col">
                         <ChatPanel
                             messages={messages}

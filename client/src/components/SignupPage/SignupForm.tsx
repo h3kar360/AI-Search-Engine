@@ -7,12 +7,13 @@ const SignupForm = () => {
     const [email, setEmail] = useState<string>("");
     const [password, setPassword] = useState<string>("");
     const [isLoading, setIsLoading] = useState<boolean>(false);
-    const [authErrorMessage, setAuthErrorMessage] = useState<string>("");
+    const [errorMessage, setErrorMessage] = useState<string>("");
 
     const navigate = useNavigate();
 
     const signup = async (e: React.SubmitEvent) => {
         e.preventDefault();
+        setErrorMessage("");
         setIsLoading(true);
 
         try {
@@ -27,7 +28,7 @@ const SignupForm = () => {
             if (user) navigate("/");
         } catch (error) {
             const authError = error as AuthError;
-            setAuthErrorMessage(authError.message.split("Firebase: ")[1]);
+            setErrorMessage(authError.message.split("Firebase: ")[1]);
             console.error(error);
         } finally {
             setIsLoading(false);
@@ -116,9 +117,7 @@ const SignupForm = () => {
                 Sign up
             </button>
 
-            <p className="text-red-500 text-sm text-center">
-                {authErrorMessage}
-            </p>
+            <p className="text-red-500 text-sm text-center">{errorMessage}</p>
 
             <p className="text-center text-sm text-muted">
                 Already have an account?

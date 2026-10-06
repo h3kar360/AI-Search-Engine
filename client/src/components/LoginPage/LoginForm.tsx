@@ -1,18 +1,23 @@
 import React, { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
-import { signInWithEmailAndPassword, type AuthError } from "firebase/auth";
+import {
+    signInWithEmailAndPassword,
+    sendPasswordResetEmail,
+    type AuthError,
+} from "firebase/auth";
 import { auth } from "../../config/firebase";
 
 const LoginForm = () => {
     const [email, setEmail] = useState<string>("");
     const [password, setPassword] = useState<string>("");
     const [isLoading, setIsLoading] = useState<boolean>(false);
-    const [authErrorMessage, setAuthErrorMessage] = useState<string>("");
+    const [errorMessage, setErrorMessage] = useState<string>("");
 
     const navigate = useNavigate();
 
     const login = async (e: React.SubmitEvent) => {
         e.preventDefault();
+        setErrorMessage("");
         setIsLoading(true);
 
         try {
@@ -26,10 +31,24 @@ const LoginForm = () => {
             if (user) navigate("/");
         } catch (error) {
             const authError = error as AuthError;
-            setAuthErrorMessage(authError.message.split("Firebase: ")[1]);
+            setErrorMessage(authError.message.split("Firebase: ")[1]);
             console.error(error);
         } finally {
             setIsLoading(true);
+        }
+    };
+
+    const sendResetEmail = async () => {
+        setErrorMessage("");
+
+        try {
+            await sendPasswordResetEmail(auth, email);
+
+            alert("Check your email for reset password");
+        } catch (error) {
+            const authError = error as AuthError;
+            setErrorMessage(authError.message.split("Firebase: ")[1]);
+            console.error(error);
         }
     };
 
@@ -115,9 +134,7 @@ const LoginForm = () => {
                 Sign in
             </button>
 
-            <p className="text-red-500 text-sm text-center">
-                {authErrorMessage}
-            </p>
+            <p className="text-red-500 text-sm text-center">{errorMessage}</p>
 
             <p className="text-center text-sm text-muted">
                 Don't have an account yet?
@@ -128,6 +145,12 @@ const LoginForm = () => {
                     Create an account
                 </NavLink>
             </p>
+            <div
+                className="text-brand hover:text-brand-hover hover:underline cursor-default text-center text-sm"
+                onClick={sendResetEmail}
+            >
+                Forgot password?
+            </div>
         </form>
     );
 };
