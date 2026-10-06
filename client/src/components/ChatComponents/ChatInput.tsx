@@ -266,7 +266,7 @@ const ChatInput = ({ messages, setMessages, id }: ChatInfo) => {
             >
                 {isRateLimit ? (
                     <div className="absolute -top-20 h-20 w-full rounded-4xl flex justify-center items-center bg-border-subtle">
-                        {`Your conversation has reached the limits. Retry at ${retryAt}`}
+                        {`Your conversation has reached its limit. Retry again at ${retryAt}`}
                     </div>
                 ) : (
                     ""
