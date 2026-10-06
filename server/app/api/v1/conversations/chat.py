@@ -10,11 +10,13 @@ from app.core.agent.memory import process_memory
 from app.core.agent.graph import create_graph
 from app.core.agent.context import Context
 from app.dependencies import get_current_user
+from app.dependencies import user_identifier
 
 chat_router = APIRouter()
 
 @chat_router.post("/{id}", dependencies=[Depends(rate_limit(
-        "20/hour",
+        "30/hour",
+        identifier=user_identifier,
         on_limit_exceeded=lambda r, res: JSONResponse(
             { 
                 "error": "Conversation limit has been met", "retry_after": res.retry_after
@@ -76,6 +78,7 @@ async def chat_with_llm(request: Request, background_tasks: BackgroundTasks, id:
 
 @chat_router.post("", dependencies=[Depends(rate_limit(
         "10/hour",
+        identifier=user_identifier,
         on_limit_exceeded=lambda r, res: JSONResponse(
             { 
                 "error": "Conversation limit has been met", "retry_after": res.retry_after

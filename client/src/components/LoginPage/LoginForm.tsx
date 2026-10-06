@@ -1,12 +1,13 @@
 import React, { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
-import { signInWithEmailAndPassword } from "firebase/auth";
+import { signInWithEmailAndPassword, type AuthError } from "firebase/auth";
 import { auth } from "../../config/firebase";
 
 const LoginForm = () => {
     const [email, setEmail] = useState<string>("");
     const [password, setPassword] = useState<string>("");
     const [isLoading, setIsLoading] = useState<boolean>(false);
+    const [authErrorMessage, setAuthErrorMessage] = useState<string>("");
 
     const navigate = useNavigate();
 
@@ -24,6 +25,8 @@ const LoginForm = () => {
 
             if (user) navigate("/");
         } catch (error) {
+            const authError = error as AuthError;
+            setAuthErrorMessage(authError.message.split("Firebase: ")[1]);
             console.error(error);
         } finally {
             setIsLoading(true);
@@ -111,6 +114,10 @@ const LoginForm = () => {
             >
                 Sign in
             </button>
+
+            <p className="text-red-500 text-sm text-center">
+                {authErrorMessage}
+            </p>
 
             <p className="text-center text-sm text-muted">
                 Don't have an account yet?

@@ -1,19 +1,21 @@
-from firebase_admin import auth
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, status, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 security = HTTPBearer()
 
 def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security)
+    request: Request
 ):
-    token = credentials.credentials
+    user = getattr(request.state, "user", None)
 
-    try:
-        decoded_token = auth.verify_id_token(token)
-        return decoded_token
-    except:
+    if user is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="User not authorized"
         )
+
+    return user
+
+def user_identifier(request: Request):
+    user = getattr(request.state, "user", None)
+    return user["uid"] if user else request.client.host

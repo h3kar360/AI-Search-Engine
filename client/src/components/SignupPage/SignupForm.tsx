@@ -1,12 +1,13 @@
 import React, { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
-import { createUserWithEmailAndPassword } from "firebase/auth";
+import { createUserWithEmailAndPassword, type AuthError } from "firebase/auth";
 import { auth } from "../../config/firebase";
 
 const SignupForm = () => {
     const [email, setEmail] = useState<string>("");
     const [password, setPassword] = useState<string>("");
     const [isLoading, setIsLoading] = useState<boolean>(false);
+    const [authErrorMessage, setAuthErrorMessage] = useState<string>("");
 
     const navigate = useNavigate();
 
@@ -25,6 +26,8 @@ const SignupForm = () => {
 
             if (user) navigate("/");
         } catch (error) {
+            const authError = error as AuthError;
+            setAuthErrorMessage(authError.message.split("Firebase: ")[1]);
             console.error(error);
         } finally {
             setIsLoading(false);
@@ -112,6 +115,10 @@ const SignupForm = () => {
             >
                 Sign up
             </button>
+
+            <p className="text-red-500 text-sm text-center">
+                {authErrorMessage}
+            </p>
 
             <p className="text-center text-sm text-muted">
                 Already have an account?

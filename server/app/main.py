@@ -10,6 +10,7 @@ from app.api.v1.router import router
 from app.db.database import engine
 from app.db.agent_memory import get_checkpointer, get_store
 from app.core.agent.graph import create_graph
+from app.middleware.firebase import firebase_auth_middleware
 # just initialize firebase in main
 from app.core.firebase import firebase_app
 
@@ -47,6 +48,8 @@ app.add_middleware(
 )
 
 app.include_router(router, prefix="/api/v1")
+
+app.middleware("http")(firebase_auth_middleware)
 
 @app.get("/")
 def root():
