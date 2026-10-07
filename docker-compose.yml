@@ -27,17 +27,17 @@ services:
         restart: unless-stopped
         command: redis-server --appendonly yes
 
-    app:
-        build: ./server
-        ports:
-            - 8000:8000
-        env_file:
-            - /server/.env
-        networks:
-            - ai-search-network
-        depends_on:
-            - postgres-db
-            - redis
+    # app:
+    #     build: ./server
+    #     ports:
+    #         - 8000:8000
+    #     env_file:
+    #         - /server/.env
+    #     networks:
+    #         - ai-search-network
+    #     depends_on:
+    #         - postgres-db
+    #         - redis
 
 networks:
     ai-search-network:

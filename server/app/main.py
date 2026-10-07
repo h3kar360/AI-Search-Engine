@@ -3,12 +3,12 @@ import os
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from redis_fastapi import FastAPIRedis
 from dotenv import load_dotenv
 
 from app.api.v1.router import router
 from app.db.database import engine
 from app.db.agent_memory import get_checkpointer, get_store
+from app.core.redis import get_redis_client
 from app.core.agent.graph import create_graph
 from app.middleware.firebase import firebase_auth_middleware
 # just initialize firebase in main
@@ -21,10 +21,12 @@ CLIENT_URL = os.getenv("CLIENT_URL")
 async def lifespan(app: FastAPI):
     async with (
         get_checkpointer() as checkpointer,
-        get_store() as store
+        get_store() as store,
+        get_redis_client() as redis_client
     ):
         app.state.store = store
         app.state.checkpointer = checkpointer
+        app.state.redis_client = redis_client
         app.state.graph = await create_graph(checkpointer=checkpointer, store=store)
         yield
 
@@ -36,8 +38,6 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan
 )
-
-FastAPIRedis(app).lifespan().caching().rate_limiting()
 
 app.add_middleware(
     CORSMiddleware,

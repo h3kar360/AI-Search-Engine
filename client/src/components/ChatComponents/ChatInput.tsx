@@ -85,10 +85,10 @@ const ChatInput = ({ messages, setMessages, id }: ChatInfo) => {
             if (response.status === 429) {
                 setIsRateLimit(true);
 
-                const { retry_after } = await response.json();
+                const { detail } = await response.json();
 
                 const now = new Date();
-                now.setSeconds(now.getSeconds() + retry_after);
+                now.setSeconds(now.getSeconds() + detail.retry_after);
 
                 const formattedDate = now
                     .toISOString()
