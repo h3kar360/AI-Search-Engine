@@ -96,6 +96,10 @@ const ChatInput = ({ messages, setMessages, id }: ChatInfo) => {
                     .replace("T", " ");
 
                 setRetryAt(formattedDate);
+            } else if (response.status === 503) {
+                // cold start snap deploy because free
+                alert("Please help cold start the server");
+                window.location.href = import.meta.env.VITE_API_URL;
             } else {
                 setIsRateLimit(false);
 
