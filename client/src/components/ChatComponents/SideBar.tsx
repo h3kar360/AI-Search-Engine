@@ -51,6 +51,12 @@ const SideBar = ({ isSidebarOpen, setIsSidebarOpen }: SideBarProp) => {
                     throw new Error("Conversations not found");
                 }
 
+                // cold start snap deploy because free
+                if (response.status === 503) {
+                    alert("Please help cold start the server");
+                    window.location.href = import.meta.env.VITE_API_URL;
+                }
+
                 const data = await response.json();
                 setConvos(data);
             } catch (error) {
