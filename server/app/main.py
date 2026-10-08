@@ -53,4 +53,4 @@ app.middleware("http")(firebase_auth_middleware)
 
 @app.get("/")
 def root():
-    return { "message": "hello" }
+    return { "message": f"Thanks for helping us cold start up the server. Please head back on to {CLIENT_URL}" }
