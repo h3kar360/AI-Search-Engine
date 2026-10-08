@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
     Route,
     createBrowserRouter,
@@ -14,6 +14,24 @@ import ChatPage from "./pages/ChatPage";
 
 const App = () => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+    useEffect(() => {
+        const coldStartOnStartUp = async () => {
+            try {
+                // health check
+                await fetch(import.meta.env.VITE_API_URL, {
+                    method: "GET",
+                });
+            } catch (error) {
+                alert(
+                    "Please help us cold start the server. This will take a minute...",
+                );
+                window.location.href = import.meta.env.VITE_API_URL;
+            }
+        };
+
+        coldStartOnStartUp();
+    }, []);
 
     const router = createBrowserRouter(
         createRoutesFromElements(
