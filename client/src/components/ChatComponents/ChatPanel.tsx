@@ -41,15 +41,15 @@ const ChatPanel = ({ messages, setMessages, id }: ChatInfo) => {
                     },
                 );
 
-                if (!response.ok)
-                    throw new Error("Error fetching chat history");
-
                 // cold start snap deploy because free
                 if (response.status === 503) {
                     console.log("hit cold start");
                     alert("Please help cold start the server");
                     window.location.href = import.meta.env.VITE_API_URL;
                 }
+
+                if (!response.ok)
+                    throw new Error("Error fetching chat history");
 
                 const { chats } = await response.json();
 

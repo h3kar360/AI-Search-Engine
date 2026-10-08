@@ -82,6 +82,8 @@ const ChatInput = ({ messages, setMessages, id }: ChatInfo) => {
                       },
                   );
 
+            console.log("FETCH RETURNED:", response.status);
+
             if (response.status === 429) {
                 setIsRateLimit(true);
 
