@@ -3,6 +3,7 @@ import uuid
 
 from fastapi import APIRouter, Form, Request, BackgroundTasks, Depends
 from fastapi.responses import StreamingResponse, JSONResponse
+from typing import Annotated
 
 from app.core.stream_agent import stream_agent
 from app.core.agent.memory import process_memory
@@ -14,7 +15,7 @@ chat_router = APIRouter()
 
 @chat_router.post("/{id}", dependencies=[Depends(rate_limit(endpoint="chat/id", limit=30, window_seconds=3600))])
 async def chat_with_llm(request: Request, background_tasks: BackgroundTasks, id: uuid.UUID, 
-                        user_message: str = Form(...), user = Depends(get_current_user)):
+                        user_message: Annotated[str, Form(min_length=1, max_length=10)], user = Depends(get_current_user)):
     graph = request.app.state.graph
     store = request.app.state.store
     convo_id = id
@@ -67,7 +68,7 @@ async def chat_with_llm(request: Request, background_tasks: BackgroundTasks, id:
     )
 
 @chat_router.post("", dependencies=[Depends(rate_limit(endpoint="chat", limit=8, window_seconds=3600))])
-async def chat_with_llm_as_guest(user_message: str = Form(...)):
+async def chat_with_llm_as_guest(user_message: Annotated[str, Form(min_length=1, max_length=1000)]):
     graph = await create_graph(checkpointer=None, store=None)
 
     async def event_generator():
