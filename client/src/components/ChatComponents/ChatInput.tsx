@@ -11,12 +11,13 @@ import type {
 import type { Message } from "../../types/chat";
 
 interface ChatInfo {
+    setNewMessage: Dispatch<SetStateAction<boolean>>;
     messages: Array<Message>;
     setMessages: Dispatch<SetStateAction<Array<Message>>>;
     id: string | null;
 }
 
-const ChatInput = ({ messages, setMessages, id }: ChatInfo) => {
+const ChatInput = ({ setNewMessage, messages, setMessages, id }: ChatInfo) => {
     const [input, setInput] = useState<string>("");
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [isRateLimit, setIsRateLimit] = useState<boolean>(false);
@@ -58,6 +59,8 @@ const ChatInput = ({ messages, setMessages, id }: ChatInfo) => {
             humanMessage,
             aiMessage,
         ]);
+
+        setNewMessage((prevBool) => !prevBool);
 
         try {
             setIsLoading(true);
@@ -214,6 +217,8 @@ const ChatInput = ({ messages, setMessages, id }: ChatInfo) => {
                                             },
                                         ];
                                     } else if (role == "ai") {
+                                        setNewMessage((prevBool) => !prevBool);
+
                                         return [
                                             ...pastMessages,
                                             {

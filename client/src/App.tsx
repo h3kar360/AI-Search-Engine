@@ -11,27 +11,28 @@ import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
 import ChatPage from "./pages/ChatPage";
+import GetTokenPage from "./temp-stuff/GetTokenPage"; // dont forget to delete before merge
 
 const App = () => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-    useEffect(() => {
-        const coldStartOnStartUp = async () => {
-            try {
-                // health check
-                await fetch(import.meta.env.VITE_API_URL, {
-                    method: "GET",
-                });
-            } catch (error) {
-                alert(
-                    "Please help us cold start the server. This will take a minute...",
-                );
-                window.location.href = import.meta.env.VITE_API_URL;
-            }
-        };
+    // useEffect(() => {
+    //     const coldStartOnStartUp = async () => {
+    //         try {
+    //             // health check
+    //             await fetch(import.meta.env.VITE_API_URL, {
+    //                 method: "GET",
+    //             });
+    //         } catch (error) {
+    //             alert(
+    //                 "Please help us cold start the server. This will take a minute...",
+    //             );
+    //             window.location.href = import.meta.env.VITE_API_URL;
+    //         }
+    //     };
 
-        coldStartOnStartUp();
-    }, []);
+    //     coldStartOnStartUp();
+    // }, []);
 
     const router = createBrowserRouter(
         createRoutesFromElements(
@@ -56,6 +57,8 @@ const App = () => {
                         />
                     }
                 />
+                {/* remember to delete this. this is only for testing to get the stuff */}
+                <Route path="/get-token" element={<GetTokenPage />} />
             </Route>,
         ),
     );
