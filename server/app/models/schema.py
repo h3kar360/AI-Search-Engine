@@ -29,8 +29,15 @@ class ChatMessageResponse(BaseModel):
 
 class ConvoChatsResponse(ConvoInfoResponse):
     chats: list[ChatMessageResponse]
+    pagination: Pagination
 
     model_config = ConfigDict(from_attributes=True)
+
+class Pagination(BaseModel):
+    page: int
+    limit: int
+    has_more: bool
+    next_page: int | None
 
 # ---Chats---
 

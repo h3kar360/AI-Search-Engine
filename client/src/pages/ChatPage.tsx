@@ -17,6 +17,8 @@ const ChatPage = ({ isSidebarOpen, setIsSidebarOpen }: SideBarProp) => {
     const { id } = useParams();
     const isMobile = useIsMobile();
     const [messages, setMessages] = useState<Array<Message>>([]);
+    // use to help rerender when we need to scroll botom: initial chat history and new messages
+    const [newMessage, setNewMessage] = useState<boolean>(false);
 
     return (
         <section className="w-full h-[calc(100vh-3.75rem)] flex overflow-hidden">
@@ -29,11 +31,14 @@ const ChatPage = ({ isSidebarOpen, setIsSidebarOpen }: SideBarProp) => {
                 className={`flex-1 min-w-0 flex flex-col ${isSidebarOpen && isMobile ? "hidden" : ""}`}
             >
                 <ChatPanel
+                    newMessage={newMessage}
+                    setNewMessage={setNewMessage}
                     messages={messages}
                     setMessages={setMessages}
                     id={id || null}
                 />
                 <ChatInput
+                    setNewMessage={setNewMessage}
                     messages={messages}
                     setMessages={setMessages}
                     id={id || null}

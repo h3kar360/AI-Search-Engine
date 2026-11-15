@@ -11,12 +11,13 @@ import type {
 import type { Message } from "../../types/chat";
 
 interface ChatInfo {
+    setNewMessage: Dispatch<SetStateAction<boolean>>;
     messages: Array<Message>;
     setMessages: Dispatch<SetStateAction<Array<Message>>>;
     id: string | null;
 }
 
-const ChatInput = ({ messages, setMessages, id }: ChatInfo) => {
+const ChatInput = ({ setNewMessage, messages, setMessages, id }: ChatInfo) => {
     const [input, setInput] = useState<string>("");
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [isRateLimit, setIsRateLimit] = useState<boolean>(false);
@@ -59,6 +60,8 @@ const ChatInput = ({ messages, setMessages, id }: ChatInfo) => {
             aiMessage,
         ]);
 
+        setNewMessage((prevBool) => !prevBool);
+
         try {
             setIsLoading(true);
             const token = await user?.getIdToken();
@@ -96,6 +99,15 @@ const ChatInput = ({ messages, setMessages, id }: ChatInfo) => {
                     .replace("T", " ");
 
                 setRetryAt(formattedDate);
+
+                throw new Error("429, Rate limit reached");
+            } else if (response.status === 422) {
+                const { detail } = await response.json();
+
+                const errMsg = detail[0].msg;
+
+                alert(errMsg);
+                throw new Error("422: " + errMsg);
             } else {
                 setIsRateLimit(false);
 
@@ -205,6 +217,8 @@ const ChatInput = ({ messages, setMessages, id }: ChatInfo) => {
                                             },
                                         ];
                                     } else if (role == "ai") {
+                                        setNewMessage((prevBool) => !prevBool);
+
                                         return [
                                             ...pastMessages,
                                             {
@@ -224,6 +238,7 @@ const ChatInput = ({ messages, setMessages, id }: ChatInfo) => {
                             }
 
                             if (data.error) {
+                                alert(data.error);
                                 console.error(data.error);
                             }
 
@@ -236,6 +251,9 @@ const ChatInput = ({ messages, setMessages, id }: ChatInfo) => {
             }
         } catch (error) {
             console.error(error);
+            setMessages(
+                (prevMessages): Array<Message> => prevMessages.slice(0, -2),
+            );
         } finally {
             setIsLoading(false);
         }

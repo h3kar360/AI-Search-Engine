@@ -23,7 +23,7 @@ async def get_all_conversations(db: AsyncSession, user_id: str) -> list[Conversa
     )
     return list(result.scalars().all())
 
-async def get_conversation_and_chats_by_id(db: AsyncSession, graph: StateGraph, id: uuid.UUID, user_id: str) -> dict | None:
+async def get_conversation_and_chats_by_id(db: AsyncSession, graph: StateGraph, id: uuid.UUID, user_id: str, limit: int = 10, page: int = 1) -> dict | None:
     result = await db.execute(
         select(Conversations)
         .where(Conversations.id == id, Conversations.user_id == user_id)
@@ -42,13 +42,7 @@ async def get_conversation_and_chats_by_id(db: AsyncSession, graph: StateGraph, 
 
     state = await graph.aget_state(config)
     messages = state.values.get("messages", [])
-    chat_history: list[dict] = []
-
-    # might add pagincation in later versions...
-    # current_msg_len = len(messages)
-    # start_index = max(0, current_msg_len - limit)
-
-    chat_history = [
+    chat_history: list[dict] = [
         {
             "id": message.id,
             "role": message.type,
@@ -59,10 +53,27 @@ async def get_conversation_and_chats_by_id(db: AsyncSession, graph: StateGraph, 
         if message.type in ("human", "ai") and message.content and not (message.type == "ai" and getattr(message, "tool_calls", None))
     ]
 
+    curr_msg_len = len(chat_history)
+    end = curr_msg_len - ((page - 1) * limit)
+    start = max(0, end - limit)
+
+    chats = []
+
+    if end <= 0:
+        chats = []
+    else:
+        chats = chat_history[start:end] 
+
     return {
         "id": convo_exists.id,
         "title": convo_exists.title,
-        "chats": chat_history
+        "chats": chats,
+        "pagination": {
+            "page": page,
+            "limit": limit,
+            "has_more": start > 0,
+            "next_page": page + 1 if start > 0 else None
+        }
     }
 
 async def update_conversation(db: AsyncSession, id: uuid.UUID, updated_convo: InsertConvo, user_id: str) -> Conversations | None:

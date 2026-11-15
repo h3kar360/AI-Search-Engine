@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useLayoutEffect } from "react";
 import { useListeningAuth } from "../../context/AuthContext";
 
 import { GiMagicLamp } from "react-icons/gi";
@@ -12,16 +12,29 @@ import type { Message } from "../../types/chat";
 import type { SetStateAction, Dispatch } from "react";
 
 interface ChatInfo {
+    newMessage: boolean;
+    setNewMessage: Dispatch<SetStateAction<boolean>>;
     messages: Array<Message>;
     setMessages: Dispatch<SetStateAction<Array<Message>>>;
     id: string | null;
 }
 
-const ChatPanel = ({ messages, setMessages, id }: ChatInfo) => {
+const ChatPanel = ({
+    newMessage,
+    setNewMessage,
+    messages,
+    setMessages,
+    id,
+}: ChatInfo) => {
     const [isLoading, setIsLoading] = useState<boolean>(false);
+    const [page, setPage] = useState<number>(1);
+    const [hasMore, setHasMore] = useState<boolean>(true);
     const bottomRef = useRef<HTMLDivElement>(null);
+    const chatRef = useRef<HTMLDivElement>(null);
+    const prevScrollRef = useRef<{ height: number; top: number } | null>(null);
     const { user } = useListeningAuth();
 
+    // initial chat history render
     useEffect(() => {
         const getConversationHistory = async () => {
             setIsLoading(true);
@@ -32,7 +45,7 @@ const ChatPanel = ({ messages, setMessages, id }: ChatInfo) => {
                 const token = await user.getIdToken();
 
                 const response = await fetch(
-                    `${import.meta.env.VITE_API_URL}/api/${import.meta.env.VITE_API_VERSION}/conversations/${id}`,
+                    `${import.meta.env.VITE_API_URL}/api/${import.meta.env.VITE_API_VERSION}/conversations/${id}?page=1&limit=10`,
                     {
                         method: "GET",
                         headers: {
@@ -44,9 +57,12 @@ const ChatPanel = ({ messages, setMessages, id }: ChatInfo) => {
                 if (!response.ok)
                     throw new Error("Error fetching chat history");
 
-                const { chats } = await response.json();
+                const { chats, pagination } = await response.json();
 
                 setMessages(chats);
+                setPage(pagination.next_page);
+                setHasMore(pagination.has_more);
+                setNewMessage((prevBool) => !prevBool);
             } catch (error) {
                 console.error(error);
             } finally {
@@ -61,10 +77,74 @@ const ChatPanel = ({ messages, setMessages, id }: ChatInfo) => {
         bottomRef.current?.scrollIntoView({
             behavior: "smooth",
         });
+    }, [newMessage]);
+
+    useLayoutEffect(() => {
+        const chatPanel = chatRef.current;
+        const previous = prevScrollRef.current;
+
+        if (!chatPanel || !previous) return;
+
+        const heightDifference = chatPanel.scrollHeight - previous.height;
+
+        chatPanel.scrollTop = previous.top + heightDifference;
+
+        prevScrollRef.current = null;
     }, [messages]);
 
+    const handleScroll = async () => {
+        const chatPanel = chatRef.current;
+
+        if (!chatPanel) return;
+
+        const scrollTop = chatPanel.scrollTop;
+
+        if (scrollTop <= 50 && hasMore) {
+            setIsLoading(true);
+
+            prevScrollRef.current = {
+                height: chatPanel.scrollHeight,
+                top: chatPanel.scrollTop,
+            };
+
+            try {
+                if (!user) return;
+
+                const token = await user.getIdToken();
+
+                const response = await fetch(
+                    `${import.meta.env.VITE_API_URL}/api/${import.meta.env.VITE_API_VERSION}/conversations/${id}?page=${page}&limit=10`,
+                    {
+                        method: "GET",
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                        },
+                    },
+                );
+
+                if (!response.ok)
+                    throw new Error("Error fetching chat history");
+
+                const { chats, pagination } = await response.json();
+
+                setMessages((currMessages) => [...chats, ...currMessages]);
+                setPage(pagination.next_page);
+                setHasMore(pagination.has_more);
+            } catch (error) {
+                console.error(error);
+            } finally {
+                setIsLoading(false);
+            }
+        }
+    };
+
     return (
-        <div className="w-full flex-1 p-6 flex flex-col gap-10 scrollbar-thin scrollbar-thumb-border-subtle/40 scrollbar-track-transparent lg:text-lg sm:text-sm overflow-y-auto">
+        <div
+            className="w-full flex-1 p-6 flex flex-col gap-10 scrollbar-thin scrollbar-thumb-border-subtle/40 scrollbar-track-transparent lg:text-lg sm:text-sm overflow-y-auto"
+            ref={chatRef}
+            onScroll={handleScroll}
+        >
+            {isLoading ? <p>loading chats...</p> : <p></p>}
             {messages.length === 0 ? (
                 <div className="w-full h-full flex flex-col justify-center items-center gap-4 text-center text-4xl">
                     <GiMagicLamp size="3em" />
