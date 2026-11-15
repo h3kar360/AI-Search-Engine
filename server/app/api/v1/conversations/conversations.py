@@ -1,6 +1,7 @@
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, status, Request
+from fastapi import APIRouter, Depends, HTTPException, status, Request, Query
+from typing import Annotated
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_db
@@ -22,13 +23,20 @@ async def get_all_convos(request: Request, user = Depends(get_current_user), db:
     return await conversations.get_all_conversations(db, user_id)
 
 @convo_router.get("/{id}", response_model=ConvoChatsResponse)
-async def get_convo(request: Request, id: uuid.UUID, user = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def get_convo(
+    request: Request, 
+    id: uuid.UUID, 
+    user = Depends(get_current_user), 
+    db: AsyncSession = Depends(get_db), 
+    page: Annotated[int, Query(ge=1)] = 1,
+    limit: Annotated[int | None, Query(ge=4)] = None
+):
     user_id = user["uid"]
     graph = request.app.state.graph
 
     print("user thing in convo: " + request.state.user["uid"])
 
-    convo = await conversations.get_conversation_and_chats_by_id(db, graph=graph, id=id, user_id=user_id)
+    convo = await conversations.get_conversation_and_chats_by_id(db, graph=graph, id=id, user_id=user_id, page=page, limit=limit)
 
     if convo is None:
         raise HTTPException(
